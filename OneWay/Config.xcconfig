@@ -1,0 +1,4 @@
+// Public defaults. Set your team and a unique bundle ID locally before installing.
+PRODUCT_BUNDLE_IDENTIFIER = dev.oneway.ios
+DEVELOPMENT_TEAM =
+#include? "Signing.local.xcconfig"

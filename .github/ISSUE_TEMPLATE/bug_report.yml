@@ -1,0 +1,34 @@
+name: Bug report
+description: Report a reproducible problem with OneWay.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Please read the troubleshooting guide first. Never attach credentials, device identifiers, or private block lists. Report vulnerabilities privately through the Security tab."
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: [iPhone, Mac, Both, Build or CI]
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: OS, browser if relevant, Xcode, and commit or branch.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include expected and actual behavior. For Mac websites, say whether a full browser quit/reopen changes the result.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted diagnostics or screenshots
+      description: Only share the minimum needed to reproduce the issue.

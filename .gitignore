@@ -1,0 +1,37 @@
+# Build products and local IDE state
+.build/
+DerivedData/
+build/
+xcuserdata/
+*.xcuserstate
+__pycache__/
+*.pyc
+.DS_Store
+*.app/
+*.dSYM/
+*.xcarchive/
+*.ipa
+*.dmg
+*.pkg
+
+# Local signing configuration, credentials and device information
+Signing.local.xcconfig
+.signing.json
+.env
+.env.*
+!.env.example
+*.mobileprovision
+*.provisionprofile
+*.p12
+*.p8
+*.pem
+*.key
+*.cer
+*.csr
+*.keychain*
+
+# Runtime data and diagnostics must never be published
+block-list.json
+hosts-before-oneway
+*.log
+*.crash

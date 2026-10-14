@@ -1,0 +1,5 @@
+{
+  "teamID": "YOUR_TEAM_ID",
+  "signingIdentity": "Developer ID Application: Your Name (YOUR_TEAM_ID)",
+  "bundleIdentifier": "com.yourname.OneWayMac"
+}

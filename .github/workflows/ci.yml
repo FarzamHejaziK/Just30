@@ -1,0 +1,33 @@
+name: Build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Swift tests and unsigned builds
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Regression tests
+        run: ./scripts/test.sh
+      - name: Build the Mac app without developer credentials
+        run: ./OneWayMac/build.sh --unsigned
+      - name: Compile the iPhone app for Simulator
+        run: >-
+          xcodebuild -project OneWay/OneWay.xcodeproj -scheme OneWay
+          -configuration Debug -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath OneWay/.build/CI CODE_SIGNING_ALLOWED=NO build
+      - name: Check formatting errors
+        run: git diff --check
