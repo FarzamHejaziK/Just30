@@ -4,3 +4,22 @@
 body{overflow-x:clip}
 .hero-visual{overflow:clip;padding:28px 14px;min-height:700px}
 @media(max-width:760px){.hero-visual{min-height:700px}.top-note{right:10px;top:12px}.bottom-note{bottom:0;left:10px}}
+
+/* The available Mac build is the primary action; installation stays one click away. */
+.nav-cta{background:var(--mint);color:var(--ink);border-color:var(--mint);font-weight:650}
+.hero-actions,.platform-actions{display:flex;align-items:center;flex-wrap:wrap;gap:18px 24px}
+.download-button{min-width:210px;justify-content:space-between}
+.install-link{font-size:12px;color:#d3dfcb;text-decoration:underline;text-underline-offset:5px}
+.download-meta{font-size:12px;color:#bdcbb5;line-height:1.8;margin:16px 0 0}
+.hero-copy .quiet{font-size:11px;max-width:380px;margin-top:6px;letter-spacing:0}
+.platform-grid .release-note{font-size:11px;color:var(--muted);margin-top:15px}
+.get-section .download-meta{font-size:12px!important;margin:18px 0 0!important}
+.install-steps{list-style:none;padding:0;margin:48px 0 30px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;text-align:left}
+.install-steps li{border-top:1px solid #7a97694d;padding-top:24px}
+.install-steps .step-num{letter-spacing:1.4px;font-size:10px}
+.install-steps h3{font-size:20px;font-weight:500;letter-spacing:-.4px;margin:14px 0 10px}
+.get-section .install-steps p{font-size:13px;line-height:1.8;margin:0;color:#bccbb5}
+.get-section .install-detail{max-width:650px;margin:16px auto 0;font-size:12px!important;line-height:1.9}
+.install-detail a{text-decoration:underline;text-underline-offset:4px;color:#d8e7cf}
+.legal ol{padding-left:24px}.legal ol li{padding-left:5px;margin-bottom:12px}
+@media(max-width:760px){.install-steps{grid-template-columns:1fr;gap:26px;margin-top:35px}.install-steps li{padding-top:20px}.hero-actions{gap:18px}.hero-copy .quiet{max-width:300px;font-size:10px}.download-meta{font-size:11px}.nav-cta{white-space:nowrap}.nav-cta span{margin-left:6px}.nav{gap:12px}.nav .brand{font-size:18px;gap:7px}.nav .brand img{width:32px;height:32px}}

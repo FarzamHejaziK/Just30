@@ -18,7 +18,7 @@ Checked October 15, 2026. iPhone build 8; Mac build 7. This report records obser
 | Mac performance | Improved in measured workload | Caching executable-to-app identity reduced 50 warm watcher sweeps from 28.933 ms to 3.336 ms on the local M4. This is a microbenchmark, not a battery-life or cross-hardware guarantee. |
 | Mac public package | Verified and published as RC1 | Apple's Xcode Direct Distribution notarization accepted; strict deep signature, stapled ticket, Gatekeeper (`Notarized Developer ID`), and both architectures pass. ZIP and SHA-256 produced without re-signing the accepted export; published as `mac-v1.3-rc.1`. |
 | Physical Intel / older macOS | Open | Both architectures compile; physical Intel and macOS 14 runtime have not been tested. |
-| Website | Pass | Live root, privacy, and support URLs return HTTP 200. Desktop and 375/320 px layouts checked, no horizontal overflow at 320 px, demo Start/Pause/Resume works, no browser console errors in the checked session. |
+| Website | Existing site live; Mac download update checked locally | Root, privacy, and support URLs return HTTP 200. The download update adds direct Mac ZIP links in the navigation, hero, platform card, and installation section; a three-step install guide; and existing-installation guidance. Desktop and 375/320 px layouts checked without horizontal overflow. Direct public ZIP matches its published checksum. Vercel deployment of this update remains pending authentication or upload. |
 | Original logo | Preserved | Native icon and website asset match the original SHA-256: `cacd358e71aa1d11e8cc5b8f00880b9e63422023c996eb3db0d5ea33f91b0085`. |
 
 ## Store status
