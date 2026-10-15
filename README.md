@@ -13,6 +13,8 @@ JustThirty was originally named OneWay. The repository, internal bundle IDs, ser
 
 Version 1.3 is being prepared for public distribution. **The iPhone app is not published on the App Store.** Apple has accepted the signed universal Mac package for notarization; Gatekeeper and its stapled ticket pass verification. See the [release checklist](release/README.md), [validation report](release/QA.md), and [App Store materials](release/app-store/en-US/metadata.json). A successful build is not proof of Screen Time enforcement.
 
+**Mac release candidate:** [Download JustThirty 1.3 RC1](https://github.com/FarzamHejaziK/OneWay/releases/tag/mac-v1.3-rc.1). Free, signed, and notarized, with a SHA-256 checksum and installation instructions. Read the release notes before adding permanent blocks. Physical Intel and older macOS testing remain open.
+
 Visit [justthirty.vercel.app](https://justthirty.vercel.app) for the product overview, interactive preview, [support](https://justthirty.vercel.app/support/), and [privacy policy](https://justthirty.vercel.app/privacy/).
 
 | | iPhone | Mac |
