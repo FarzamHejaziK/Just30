@@ -1,4 +1,5 @@
-// Public defaults. Set your team and a unique bundle ID locally before installing.
-PRODUCT_BUNDLE_IDENTIFIER = dev.oneway.ios
+// Override the app identity and team in the ignored local config.
+ONEWAY_APP_ID = dev.oneway.ios
 DEVELOPMENT_TEAM =
 #include? "Signing.local.xcconfig"
+ONEWAY_APP_GROUP = group.$(ONEWAY_APP_ID)

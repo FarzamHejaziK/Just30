@@ -1,17 +1,15 @@
-# Privacy
+# JustThirty privacy
 
-OneWay's application code has no hosted backend, account system, analytics SDK, advertising SDK, telemetry endpoint, or cloud synchronization. Website suggestions are a bundled local catalog; typing a query does not send it to a search engine or visit that site.
+Effective October 15, 2026. JustThirty is the current display name of the app originally called OneWay.
 
-## Stored on your devices
+The iPhone and Mac apps store block lists and daily allowance state locally. They do not send selected apps, domains, browsing history, timer usage, or device activity to the developer. No analytics, advertising, account, cloud sync, or third-party runtime SDK is included. Website suggestions are searched locally.
 
-The iPhone app stores opaque Apple selection tokens and explicitly added website domains in its own container. The Mac stores selected app names, bundle identifiers, paths, and website hostnames in a root-owned file. The Mac interface also caches the last-known list in user defaults so it can show it when the helper is unavailable.
+On iPhone, selections use Apple's privacy-preserving Screen Time tokens. Typed domains are stored as domains. The app and monitoring extension share a local app-group container to restore shields when an access session ends. The Mac background service stores enforcement data in protected local Application Support and maintains an explicit section of the hosts file. Operating-system backups may include local app data.
 
-The Mac service examines user-process executable paths and enclosing app identities to find selected apps. It does not record a general application-usage history. Hosts-based blocking does not require reading page content. The service writes enforcement errors to the local system log; diagnostics can contain local paths or hostnames.
+The user grants individual Screen Time authorization on iPhone and administrator approval for the Mac service. Apple controls Screen Time and device authorization. JustThirty provides no in-app removal/reset; device owners retain operating-system controls.
 
-Apple controls Screen Time authorization, signing, and other operating-system services. Builds may contact Apple for signing/provisioning or timestamping. GitHub receives normal repository and CI traffic. Those services have their own policies; they are not a OneWay cloud backend.
+The marketing website has no application analytics, tracking, or persistent timer storage. Its hosting provider processes ordinary web requests such as IP address and browser information to serve and secure the site. External Apple and GitHub links are governed by those providers' policies.
 
-## Publishing and support
+Support posts on GitHub may be public. Do not include private block lists, personal activity, contact information, credentials, or device identifiers. [Ask a general privacy question](https://github.com/FarzamHejaziK/OneWay/issues/new) without sharing that information.
 
-The repository excludes local signing settings, credentials, profiles, device IDs, generated builds, runtime block lists, and hosts backups. Before sharing screenshots or logs, check them for personal sites, app names, account information, and device details. A public GitHub issue is visible to everyone.
-
-There is no in-app data-removal interface because the product's normal policy is add-only. A device owner with the appropriate operating-system or administrator access can still perform maintenance. See the platform guides before changing or uninstalling an installation with active restrictions.
+The full website policy is maintained in `website/privacy/index.html`.

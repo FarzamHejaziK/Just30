@@ -26,30 +26,35 @@ struct HomeView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var showApps = false
     @State private var showWebsites = false
+    @State private var confirmAccess = false
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     private let accent = Color(red: 0.62, green: 0.89, blue: 0.62)
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                LazyVStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 10) {
                         Image(systemName: "lock.shield.fill").font(.system(size: 30)).foregroundStyle(accent)
-                        Text("Less temptation.\nMore intention.").font(.system(size: 30, weight: .bold, design: .rounded))
-                        Text("Add it once. Keep it blocked.").foregroundStyle(.secondary)
+                        Text("Less temptation.\nMore intention.").font(.system(.largeTitle, design: .rounded).weight(.bold))
+                        Text("A little access. A clear stopping point.").foregroundStyle(.secondary)
                     }.padding(.top, 4)
 
                     VStack(alignment: .leading, spacing: 12) {
-                        Label(status, systemImage: model.approved ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
-                            .font(.headline).foregroundStyle(model.approved ? accent : .orange)
-                        Text("This is an add-only list. There are no remove, pause, or reset controls.")
+                        Label(status, systemImage: model.approved && model.loaded ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
+                            .font(.headline).foregroundStyle(model.approved && model.loaded ? accent : .orange)
+                        Text("Your list stays add-only. Apps and websites share 30 minutes of timed access per day on this iPhone.")
                             .font(.subheadline).foregroundStyle(.secondary)
+                        if let issue = model.error, !model.loaded { Text(issue).font(.footnote).foregroundStyle(.orange) }
                         if !model.approved {
                             Button("Enable Screen Time Access") { Task { await model.authorize() } }
                                 .buttonStyle(.borderedProminent).disabled(model.busy || !model.loaded)
                         }
                     }.padding(20).frame(maxWidth: .infinity, alignment: .leading).background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 22))
 
-                    let actionLayout = typeSize.isAccessibilitySize
+                    allowanceCard
+
+                    let actionLayout = typeSize >= .xxxLarge
                         ? AnyLayout(VStackLayout(spacing: 12))
                         : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
                     actionLayout {
@@ -61,7 +66,7 @@ struct HomeView: View {
                         Text("YOUR BLOCK LIST").font(.caption.weight(.semibold)).tracking(2).foregroundStyle(.secondary)
                         if model.list.isEmpty {
                             Text("A little distance starts here.").font(.headline)
-                            Text("Add the apps and sites you want out of reach. Review each addition carefully: you cannot remove it in OneWay.")
+                            Text("Add the apps and sites you want out of reach. Review each addition carefully: you cannot remove it in JustThirty.")
                                 .font(.subheadline).foregroundStyle(.secondary)
                         }
                         ForEach(Array(model.list.apps), id: \.self) { token in
@@ -74,21 +79,33 @@ struct HomeView: View {
                             lockedRow { Label(token).labelStyle(.titleAndIcon) }
                         }
                         ForEach(model.list.domains.sorted(), id: \.self) { domain in
-                            lockedRow { Label(domain, systemImage: "globe") }
+                            lockedRow { Label(domain, systemImage: "globe").fixedSize(horizontal: false, vertical: true) }
                         }
                     }
 
-                    Text("OneWay cannot prevent you from revoking Screen Time access in iOS Settings or deleting the app. Website filtering depends on browser support. Adding typed websites also disables Safari Private Browsing.")
+                    Text("JustThirty cannot prevent you from revoking Screen Time access in iOS Settings or deleting the app. Website filtering depends on browser support. Adding typed websites also disables Safari Private Browsing.")
                         .font(.footnote).foregroundStyle(.secondary).padding(.top, 8)
                 }.padding(24)
             }
             .background(Color(red: 0.055, green: 0.07, blue: 0.06))
-            .navigationTitle("OneWay").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("JustThirty").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink { AboutView() } label: { Image(systemName: "info.circle") }
+                        .accessibilityLabel("About JustThirty and privacy")
+                }
+            }
             .sheet(isPresented: $showApps) { AddAppsView() }
             .sheet(isPresented: $showWebsites) { AddWebsitesView() }
             .alert("Couldn't update the block list", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
                 Button("OK") { model.error = nil }
             } message: { Text(model.error ?? "") }
+            .onReceive(timer) { _ in if phase == .active { model.refreshIfNeeded() } }
+            .confirmationDialog("Start access?", isPresented: $confirmAccess, titleVisibility: .visible) {
+                Button("Start timer and unlock") { model.resumeAccess() }
+            } message: {
+                Text("All saved apps and websites unlock together. The timer runs until you tap Pause access, even if you switch away or lock your phone. Pausing blocks everything again and keeps your unused time for later today.")
+            }
             .onChange(of: phase) { _, value in if value == .active { model.refresh() } }
         }.tint(accent).preferredColorScheme(.dark)
     }
@@ -96,7 +113,31 @@ struct HomeView: View {
     private var status: String {
         if !model.loaded { return "Saved list needs attention" }
         if !model.approved { return "Screen Time access required" }
-        return model.list.isEmpty ? "Ready for your first block" : "Blocking enabled"
+        return model.list.isEmpty ? "Ready for your first block" : model.session.isActive() ? "Timed access is on" : "Blocking enabled"
+    }
+
+    private var allowanceCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("DAILY ACCESS", systemImage: "timer").font(.caption.weight(.semibold)).foregroundStyle(accent)
+            if let issue = model.error { Text(issue).font(.footnote).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true) }
+            if model.session.isActive(), let end = model.session.endsAt {
+                Text(end, style: .timer).font(.system(.largeTitle, design: .rounded).weight(.bold)).monospacedDigit()
+                Text("Tap Pause to save your remaining time, or let the timer finish to block everything again.").font(.subheadline).foregroundStyle(.secondary)
+                Button("Pause access") { model.endSession() }.buttonStyle(.bordered)
+            } else {
+                Text("\(AccessSession.clock(model.session.budget.remaining)) left today")
+                    .font(.title3.weight(.semibold))
+                Text("Start to unlock. Pause to block again and save the remaining time. 30 minutes a day, shared by all apps and websites.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                Button {
+                    confirmAccess = true
+                } label: {
+                    Label(model.session.budget.used > 0 ? "Resume access" : "Start access", systemImage: "play.fill")
+                }.buttonStyle(.borderedProminent).foregroundStyle(.black)
+                    .disabled(!model.approved || !model.loaded || model.list.isEmpty || model.session.budget.remaining < 1)
+            }
+        }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
+            .background(accent.opacity(0.07), in: RoundedRectangle(cornerRadius: 22))
     }
 
     private func addButton(_ title: String, detail: String, icon: String, action: @escaping () -> Void) -> some View {
@@ -158,7 +199,7 @@ struct AddAppsView: View {
             }
             .confirmationDialog("Add these blocks?", isPresented: $confirm, titleVisibility: .visible) {
                 Button("Add to block list") { if model.add(selection: draft) { dismiss() } }
-            } message: { Text("These additions cannot be removed in OneWay. Entire categories also block other apps and websites in those categories.") }
+            } message: { Text("These additions cannot be removed in JustThirty. Entire categories also block other apps and websites in those categories.") }
         }
     }
 }
@@ -184,7 +225,7 @@ struct AddWebsitesView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Find it. Block it.\nMove on.")
-                            .font(.system(size: 31, weight: .bold, design: .rounded))
+                            .font(.system(.largeTitle, design: .rounded).weight(.bold))
                         Text("Search a familiar site or paste any website link.")
                             .font(.subheadline).foregroundStyle(.secondary)
                     }
@@ -268,7 +309,7 @@ struct AddWebsitesView: View {
                         }
                         .buttonStyle(.borderedProminent).controlSize(.large)
                         .disabled(alreadyBlocked || capacityExceeded || !model.approved)
-                        Text(capacityExceeded ? "This would exceed the 50-domain limit." : "Once added, you can't remove it in OneWay.")
+                        Text(capacityExceeded ? "This would exceed the 50-domain limit." : "Once added, you can't remove it in JustThirty.")
                             .font(.caption).foregroundStyle(capacityExceeded ? .orange : .secondary)
                     }.padding(.horizontal, 24).padding(.vertical, 14).background(.ultraThinMaterial)
                 }
@@ -287,7 +328,7 @@ struct AddWebsitesView: View {
                     }
                 }
             } message: {
-                Text((pending?.domains.sorted().joined(separator: "\n") ?? "") + "\n\nThese domains will stay in your block list. There is no undo in OneWay.")
+                Text((pending?.domains.sorted().joined(separator: "\n") ?? "") + "\n\nThese domains will stay in your block list. There is no undo in JustThirty.")
             }
         }.tint(accent).preferredColorScheme(.dark)
     }
@@ -349,5 +390,30 @@ struct AddWebsitesView: View {
         pending = site
         searchFocused = false
         showConfirmation = true
+    }
+}
+
+
+struct AboutView: View {
+    var body: some View {
+        List {
+            Section("Your time, your device") {
+                Text("JustThirty gives all your selected apps and websites one combined 30-minute daily allowance on this device. Start to unlock, pause to save time, resume when you need it. The timer keeps running until you pause, including while your phone is locked.")
+                Text("Your allowance resets at midnight in the time zone where you first used the app. Unused minutes do not carry over. Devices have separate allowances.")
+            }
+            Section("Add with intention") {
+                Text("Saved entries cannot be removed inside JustThirty. Review every addition carefully. iOS still lets you revoke Screen Time authorization or delete the app. This is a commitment tool, not a tamper-proof lock.")
+            }
+            Section("Privacy") {
+                Text("Your selections and timer stay on your device. No account, analytics, advertising, or cloud sync. Website suggestions are searched locally. We do not receive your browsing history or selected apps.")
+                Link("Privacy policy", destination: URL(string: "https://github.com/FarzamHejaziK/OneWay/blob/main/docs/privacy.md")!)
+                Link("Help and support", destination: URL(string: "https://github.com/FarzamHejaziK/OneWay/discussions")!)
+                Text("Public support posts are visible to others. Do not include your private block list or personal information.").font(.footnote)
+            }
+            Section {
+                Text("JustThirty \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
+                Text("Free and open source. Made by Farzam Hejazi.")
+            }
+        }.navigationTitle("About JustThirty")
     }
 }

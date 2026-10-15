@@ -35,3 +35,13 @@ block-list.json
 hosts-before-oneway
 *.log
 *.crash
+
+# Private daily access state
+daily-access.json
+allowance.json
+allowance.lock
+
+# Website dependencies and deployment metadata
+node_modules/
+.vercel/
+website/dist/

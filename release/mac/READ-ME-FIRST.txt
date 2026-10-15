@@ -1,0 +1,20 @@
+JustThirty for Mac
+A little access. A clear stopping point.
+
+Requires macOS 14 or later. Supports Apple silicon and Intel.
+Drag JustThirty to Applications, then open it. Use Set up background blocking
+and approve the local service in System Settings if asked.
+
+Review additions carefully: the app has no remove or reset control.
+All selected apps and websites share 30 minutes a day on this Mac.
+Start to unlock, pause to re-block and preserve unused time, resume later.
+The timer keeps running while the app is closed or the Mac is asleep.
+
+SAVE YOUR BROWSER WORK before pausing or ending access. Supported browsers
+close to clear existing connections, which may interrupt unsaved work.
+Host rules cover explicit domains. Proxies, alternate DNS behavior, existing
+connections, or additional domains may bypass them. This is a personal
+commitment tool; a Mac administrator retains control of the system.
+
+Privacy: selections and timers stay on your Mac. No account, ads, or analytics.
+Support and source: https://github.com/FarzamHejaziK/OneWay

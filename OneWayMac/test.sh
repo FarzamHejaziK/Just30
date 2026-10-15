@@ -15,6 +15,7 @@ cat > "$oneway_fixture/Contents/Info.plist" <<'PLIST'
 PLIST
 xcrun swiftc "$oneway_root/Tests/Fixture.swift" -o "$oneway_fixture/Contents/MacOS/fixture"
 xcrun swiftc -swift-version 5 -parse-as-library \
+    "$oneway_root/../Shared/DailyAllowance.swift" "$oneway_root/../Shared/AccessSession.swift" \
     "$oneway_root/../OneWay/OneWay/BlockList.swift" "$oneway_root/Sources/Core.swift" \
     "$oneway_root/Sources/Enforcement.swift" "$oneway_root/Tests/CoreTests.swift" \
     -o "$oneway_root/.build/core-tests"

@@ -1,0 +1,19 @@
+A little access. A clear stopping point.
+
+JustThirty helps you put distance between yourself and distracting apps and websites. Choose what you want to limit, then give everything on your list one combined 30-minute daily allowance on your iPhone.
+
+START. PAUSE. RESUME.
+Start access when you want to open your selected apps and sites. Pause to block them again and save your unused time. Resume later that day. The timer keeps running while you switch away or lock your phone, so pause when you're done. When the allowance ends, blocking returns.
+
+ADD WITH INTENTION
+Choose apps and categories with Apple's Screen Time picker. Search familiar websites or paste a domain. Review every addition carefully: entries cannot be removed inside JustThirty. There is no extra-time purchase or in-app reset.
+
+PRIVATE BY DESIGN
+Your block list and timer stay on your device. No account, analytics, advertising, or cloud sync. Website suggestions are searched locally.
+
+CLEAR LIMITS
+JustThirty uses Apple's Screen Time tools. Website coverage depends on the browser. iOS still lets you revoke Screen Time access or delete the app. Adding typed website restrictions also disables Safari Private Browsing. JustThirty is a personal commitment tool; it cannot make your device impossible to override.
+
+The daily allowance resets at midnight in the original allowance time zone. Unused minutes do not carry over. Each device has its own allowance.
+
+Free and open source. Requires iOS 17.4 or later.

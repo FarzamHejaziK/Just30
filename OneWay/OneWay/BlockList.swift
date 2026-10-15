@@ -12,7 +12,7 @@ enum BlockListError: LocalizedError {
 }
 
 // The only mutation exposed by this type is a validated union.
-struct BlockList<A: Hashable & Codable, C: Hashable & Codable, W: Hashable & Codable>: Codable {
+struct BlockList<A: Hashable & Codable, C: Hashable & Codable, W: Hashable & Codable>: Codable, Equatable {
     private(set) var apps: Set<A> = []
     private(set) var categories: Set<C> = []
     private(set) var websites: Set<W> = []

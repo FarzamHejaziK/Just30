@@ -8,6 +8,17 @@ final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate
     private let hosts = HostsEnforcer(hostsURL: URL(fileURLWithPath: "/private/etc/hosts"),
         backupURL: OneWayConfig.stateDirectory.appendingPathComponent("hosts-before-oneway"), flushDNS: true)
     private let apps = AppEnforcer()
+    private let sessionURL = OneWayConfig.stateDirectory.appendingPathComponent("daily-access.json")
+    private var session = AccessSession()
+    private var sessionLoaded = false
+    private var browserCloseUntil: Date?
+    private let browserEnforcer = AppEnforcer()
+    // These browser processes must exit so existing connections do not survive re-blocking.
+    private let browsers = ["com.apple.Safari", "com.google.Chrome", "com.google.Chrome.beta",
+        "com.google.Chrome.canary", "org.chromium.Chromium", "org.mozilla.firefox", "org.mozilla.nightly",
+        "com.microsoft.edgemac", "com.brave.Browser", "com.operasoftware.Opera", "com.vivaldi.Vivaldi",
+        "company.thebrowser.Browser", "com.duckduckgo.macos.browser", "app.zen-browser.zen"]
+        .map { BlockedApplication(bundleID: $0, name: $0, path: "/__oneway_browser_id_only__/" + $0 + ".app") }
     private var list = MacBlockList()
     private var loaded = false
     private var issue: String?
@@ -29,6 +40,16 @@ final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate
                 try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
                 list = try StateFile.load(stateURL)
                 loaded = true
+                do {
+                    if FileManager.default.fileExists(atPath: sessionURL.path) {
+                        session = try JSONDecoder().decode(AccessSession.self, from: Data(contentsOf: sessionURL))
+                        try session.validate()
+                    }
+                    session.migratePausableAccounting()
+                    session.budget.advance(to: Date())
+                    try saveSession(session)
+                    sessionLoaded = true
+                } catch { issue = "Daily access is unavailable: " + error.localizedDescription }
                 applyHosts()
             } catch { issue = error.localizedDescription }
         }
@@ -36,7 +57,7 @@ final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate
         timer.schedule(deadline: .now(), repeating: .milliseconds(500), leeway: .milliseconds(100))
         timer.setEventHandler { [weak self] in
             guard let self, self.loaded else { return }
-            self.apps.enforce(self.list.applications)
+            self.enforceSession()
             self.tick += 1
             if self.tick % 6 == 0 { self.applyHosts() }
         }
@@ -44,8 +65,39 @@ final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate
         timer.resume()
     }
 
+    private var accessActive: Bool { sessionLoaded && session.isActive() }
+    private func saveSession(_ next: AccessSession) throws {
+        try next.validate()
+        try AtomicFile.write(JSONEncoder().encode(next), to: sessionURL, attributes: [.posixPermissions: 0o600])
+        session = next
+    }
+    private func enforceSession() {
+        if !accessActive {
+            if sessionLoaded && (session.endsAt != nil || session.budget.calendar.startOfDay(for: Date()) > session.budget.dayStart) {
+                var next = session
+                next.end()
+                next.budget.advance(to: Date())
+                do { try saveSession(next) } catch { sessionLoaded = false; issue = error.localizedDescription }
+                applyHosts()
+            }
+            apps.enforce(list.applications)
+            if session.pendingBrowserClose {
+                // Keep the pending flag across helper restarts until the sweep is complete.
+                if browserCloseUntil == nil { browserCloseUntil = Date().addingTimeInterval(3) }
+                browserEnforcer.enforce(browsers)
+                if Date() >= browserCloseUntil! {
+                    var next = session; next.pendingBrowserClose = false
+                    do { try saveSession(next); browserCloseUntil = nil }
+                    catch { issue = error.localizedDescription }
+                }
+            }
+        }
+    }
     private func applyHosts() {
-        do { try hosts.apply(list.domains); issue = nil }
+        do {
+            try hosts.apply(accessActive ? [] : list.domains)
+            if sessionLoaded { issue = nil }
+        }
         catch {
             let description = error.localizedDescription
             if description != issue { logger.error("Website enforcement needs attention: \(description, privacy: .public)") }
@@ -55,11 +107,42 @@ final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate
 
     private func respond(_ reply: @escaping (Data?, String?) -> Void) {
         do {
-            let snapshot = ServiceSnapshot(list: list, ready: loaded && issue == nil, issue: issue, version: "1.0")
+            let snapshot = ServiceSnapshot(list: list, ready: loaded && issue == nil, issue: issue, version: "1.3", session: sessionLoaded ? session : nil)
             reply(try JSONEncoder().encode(snapshot), nil)
         } catch { reply(nil, error.localizedDescription) }
     }
 
+    func resumeSession(reply: @escaping (Data?, String?) -> Void) {
+        queue.async {
+            do {
+                guard self.loaded && self.sessionLoaded && self.issue == nil && !self.list.isEmpty,
+                      self.browserCloseUntil == nil else { throw MacFailure.message("Blocking must be healthy before starting access.") }
+                var next = self.session
+                try next.startRemaining()
+                next.pendingBrowserClose = !self.list.domains.isEmpty
+                try self.saveSession(next)
+                self.applyHosts()
+                if let issue = self.issue {
+                    var closed = self.session; closed.end(); try self.saveSession(closed)
+                    self.enforceSession()
+                    throw MacFailure.message(issue)
+                }
+                self.respond(reply)
+            } catch { reply(nil, error.localizedDescription) }
+        }
+    }
+    func endSession(reply: @escaping (Data?, String?) -> Void) {
+        queue.async {
+            do {
+                guard self.sessionLoaded else { throw MacFailure.message("Daily access state could not be read.") }
+                var next = self.session; next.end()
+                try self.saveSession(next)
+                self.applyHosts()
+                self.enforceSession()
+                self.respond(reply)
+            } catch { reply(nil, error.localizedDescription) }
+        }
+    }
     func snapshot(reply: @escaping (Data?, String?) -> Void) {
         queue.async { self.respond(reply) }
     }
@@ -87,8 +170,13 @@ final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate
         // Commit before enforcement. A failed save never replaces the in-memory list.
         try StateFile.save(next, to: stateURL)
         list = next
+        if accessActive && !list.domains.isEmpty && !session.pendingBrowserClose {
+            var updated = session; updated.pendingBrowserClose = true
+            do { try saveSession(updated) }
+            catch { sessionLoaded = false; issue = error.localizedDescription }
+        }
         applyHosts()
-        apps.enforce(list.applications)
+        enforceSession()
     }
 
     func listener(_ listener: NSXPCListener, shouldAcceptNewConnection connection: NSXPCConnection) -> Bool {

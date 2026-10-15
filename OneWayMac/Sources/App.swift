@@ -12,7 +12,7 @@ private enum Palette {
 struct OneWayMacApp: App {
     @StateObject private var model = AppModel()
     var body: some Scene {
-        Window("OneWay", id: "main") {
+        Window("JustThirty", id: "main") {
             MainView().environmentObject(model)
                 .frame(minWidth: 860, minHeight: 650)
                 .preferredColorScheme(.dark)
@@ -39,8 +39,10 @@ private enum AddSheet: String, Identifiable { case apps, websites; var id: Strin
 
 struct MainView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.scenePhase) private var phase
     @State private var page = Page.overview
     @State private var sheet: AddSheet?
+    @State private var confirmAccess = false
     private let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -50,6 +52,7 @@ struct MainView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     header
                     statusCard
+                    allowanceCard
                     if page == .overview {
                         HStack(spacing: 16) {
                             actionCard("Add apps", subtitle: "Make room for your focus", symbol: "square.grid.2x2.fill") { sheet = .apps }
@@ -59,7 +62,7 @@ struct MainView: View {
                     blockList
                     HStack(alignment: .top, spacing: 9) {
                         Image(systemName: "info.circle")
-                        Text("Website rules cover the exact domains you add, including the shown aliases. Other subdomains, proxies, and some browser DNS settings can bypass them. Blocked apps are closed shortly after opening. A Mac administrator can disable the service.")
+                        Text("Website rules cover the exact domains you add, including the shown aliases. Other subdomains, proxies, and some browser DNS settings can bypass them. Outside timed access, blocked apps close shortly after opening. When access ends, supported browsers close to clear existing connections. Save your work first. A Mac administrator can disable the service.")
                             .fixedSize(horizontal: false, vertical: true)
                     }.font(.system(size: 11)).foregroundStyle(.secondary).lineSpacing(3)
                 }.padding(32).frame(maxWidth: 1000, alignment: .leading)
@@ -70,11 +73,47 @@ struct MainView: View {
             if item == .websites { WebsiteSheet().environmentObject(model) }
             else { AppsSheet().environmentObject(model) }
         }
-        .alert("Couldn't update OneWay", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
+        .alert("Couldn't update JustThirty", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
             Button("OK") { model.error = nil }
         } message: { Text(model.error ?? "") }
+        .confirmationDialog("Start access?", isPresented: $confirmAccess, titleVisibility: .visible) {
+            Button("Start timer and unlock") { Task { await model.resumeAccess() } }
+        } message: {
+            Text("Save browser and app work first. All blocked apps and websites unlock together. The timer runs until you tap Pause access, even while you are away. Pausing or reaching zero closes blocked apps and supported browsers, which can lose unsaved work. Pausing preserves unused time for later today.")
+        }
         .task { await model.refresh() }
-        .onReceive(timer) { _ in Task { await model.refresh() } }
+        .onReceive(timer) { _ in if phase == .active { Task { await model.refresh() } } }
+        .onChange(of: phase) { _, value in if value == .active { Task { await model.refresh() } } }
+    }
+
+    private var allowanceCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("DAILY ACCESS", systemImage: "timer").font(.system(size: 11, weight: .semibold)).foregroundStyle(Palette.mint)
+            if let session = model.session {
+                if session.isActive(), let end = session.endsAt {
+                    Text(end, style: .timer).font(.system(size: 30, weight: .bold, design: .rounded)).monospacedDigit()
+                    Text("Timer running. Pause to save unused time. Blocked apps and supported browsers close on pause or when time runs out.")
+                        .font(.system(size: 12)).foregroundStyle(.secondary)
+                    Button("Pause access") { Task { await model.endSession() } }.disabled(model.busy)
+                } else {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("\(AccessSession.clock(session.budget.remaining)) left today").font(.system(size: 19, weight: .semibold))
+                            Text("Start to unlock. Pause to block and save time. 30 minutes shared each day.")
+                                .font(.system(size: 12)).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button { confirmAccess = true } label: {
+                            Label(session.budget.used > 0 ? "Resume access" : "Start access", systemImage: "play.fill")
+                        }.buttonStyle(.borderedProminent).foregroundStyle(.black)
+                            .disabled(!model.canAdd || model.list.isEmpty || session.budget.remaining < 1)
+                    }
+                }
+            } else {
+                Text("Connect to the updated background service to use daily access.").font(.system(size: 12)).foregroundStyle(.secondary)
+            }
+        }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Palette.mint.opacity(0.07), in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var sidebar: some View {
@@ -82,7 +121,7 @@ struct MainView: View {
             HStack(spacing: 12) {
                 Image(systemName: "lock.shield.fill").font(.system(size: 28)).foregroundStyle(Palette.mint)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("OneWay").font(.system(size: 23, weight: .bold, design: .rounded))
+                    Text("JustThirty").font(.system(size: 23, weight: .bold, design: .rounded))
                     Text("FOR YOUR MAC").font(.system(size: 9, weight: .semibold)).tracking(2).foregroundStyle(.secondary)
                 }
             }.padding(.top, 25).padding(.horizontal, 10)
@@ -105,7 +144,7 @@ struct MainView: View {
             Spacer()
             VStack(alignment: .leading, spacing: 9) {
                 Label("An add-only space", systemImage: "lock.fill").font(.system(size: 12, weight: .medium)).foregroundStyle(Palette.mint)
-                Text("No pause. No remove button.\nOne less decision to make.")
+                Text("30 minutes a day.\nYour list stays add-only.")
                     .font(.system(size: 11)).foregroundStyle(.secondary).lineSpacing(4)
             }.padding(12)
         }.padding(18).frame(width: 210).frame(maxHeight: .infinity).background(Palette.sidebar)
@@ -153,8 +192,8 @@ struct MainView: View {
     }
     private var statusDetail: String {
         if model.connected { return "The background service runs with the window closed and starts again when your Mac restarts." }
-        if model.status == .requiresApproval { return "Allow OneWay under Login Items & Extensions → App Background Activity. macOS may ask for your administrator password." }
-        return "One-time setup lets OneWay apply website rules and close blocked apps in the background. Existing network rules are preserved."
+        if model.status == .requiresApproval { return "Allow JustThirty under Login Items & Extensions → App Background Activity. macOS may ask for your administrator password." }
+        return "One-time setup lets JustThirty apply website rules and close blocked apps in the background. Existing network rules are preserved."
     }
 
     private func actionCard(_ title: String, subtitle: String, symbol: String, action: @escaping () -> Void) -> some View {
@@ -203,7 +242,7 @@ struct MainView: View {
                         Image(nsImage: NSWorkspace.shared.icon(forFile: app.path)).resizable().frame(width: 28, height: 28)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(app.name).font(.system(size: 13, weight: .medium))
-                            Text("App · closes when opened").font(.system(size: 11)).foregroundStyle(.secondary)
+                            Text("App · blocked outside timed access").font(.system(size: 11)).foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -328,7 +367,7 @@ struct WebsiteSheet: View {
             Button("Add to block list") {
                 Task { if await model.addWebsite(site) { added = "\(site.name) added. Your saved blocks stay in place."; query = "" } }
             }
-        } message: { site in Text("\(MacDomain.expanded(site).sorted().joined(separator: ", "))\n\nThese rules apply to this Mac. You cannot remove them inside OneWay.") }
+        } message: { site in Text("\(MacDomain.expanded(site).sorted().joined(separator: ", "))\n\nThese rules apply to this Mac. You cannot remove them inside JustThirty.") }
     }
 }
 
@@ -364,7 +403,8 @@ struct AppsSheet: View {
                             }.padding(12).background(Palette.card, in: RoundedRectangle(cornerRadius: 11)).contentShape(Rectangle())
                         }.buttonStyle(.plain).disabled(!model.canAdd || model.isBlocked(app))
                     }
-                    if apps.isEmpty { Text("No matching apps found.").foregroundStyle(.secondary).padding(24) }
+                    if model.loadingApps { ProgressView("Finding installed apps…").padding(24) }
+                    else if apps.isEmpty { Text("No matching apps found.").foregroundStyle(.secondary).padding(24) }
                 }
             }
             HStack {
@@ -378,6 +418,6 @@ struct AppsSheet: View {
         .alert("Block this app permanently?", isPresented: $confirmation, presenting: pending) { app in
             Button("Cancel", role: .cancel) {}
             Button("Block app", role: .destructive) { Task { if await model.addApp(app) { added = "\(app.name) added to your block list." } } }
-        } message: { app in Text("\(app.name) will close, including any unsaved work. OneWay will close it again whenever it opens. You cannot remove it inside OneWay.") }
+        } message: { app in Text("\(app.name) will close, including any unsaved work. JustThirty will close it again whenever it opens. You cannot remove it inside JustThirty.") }
     }
 }

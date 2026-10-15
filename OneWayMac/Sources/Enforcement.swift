@@ -4,6 +4,8 @@ import Darwin
 final class HostsEnforcer {
     let hostsURL: URL
     let backupURL: URL
+    private var lastBytes: Data?
+    private var lastDomains: Set<String>?
     let flushDNS: Bool
     init(hostsURL: URL, backupURL: URL, flushDNS: Bool) {
         self.hostsURL = hostsURL
@@ -17,11 +19,12 @@ final class HostsEnforcer {
             throw MacFailure.message("The hosts file is not a regular file. No network settings were changed.")
         }
         let bytes = try Data(contentsOf: hostsURL)
+        if bytes == lastBytes && domains == lastDomains { return }
         guard let original = String(data: bytes, encoding: .utf8) else {
             throw MacFailure.message("The hosts file could not be read as text.")
         }
         let updated = try HostsRules.merging(original, domains: domains)
-        guard updated != original else { return }
+        guard updated != original else { lastBytes = bytes; lastDomains = domains; return }
         if !FileManager.default.fileExists(atPath: backupURL.path) {
             try bytes.write(to: backupURL, options: .atomic)
             try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: backupURL.path)
@@ -35,6 +38,8 @@ final class HostsEnforcer {
             .ownerAccountID: attributes[.ownerAccountID] ?? getuid(),
             .groupOwnerAccountID: attributes[.groupOwnerAccountID] ?? getgid()
         ])
+        lastBytes = Data(updated.utf8)
+        lastDomains = domains
         if flushDNS {
             for (command, arguments) in [("/usr/bin/dscacheutil", ["-flushcache"]), ("/usr/bin/killall", ["-HUP", "mDNSResponder"])] {
                 let process = Process()

@@ -50,6 +50,7 @@ enum ServiceClient {
 @MainActor
 final class AppModel: ObservableObject {
     @Published private(set) var list = MacBlockList()
+    @Published private(set) var session: AccessSession?
     @Published private(set) var connected = false
     @Published private(set) var healthy = false
     @Published private(set) var status: SMAppService.Status = .notRegistered
@@ -58,8 +59,10 @@ final class AppModel: ObservableObject {
     @Published var error: String?
     @Published var success: String?
     @Published private(set) var installedApps: [BlockedApplication] = []
+    @Published private(set) var loadingApps = false
     private let service = SMAppService.daemon(plistName: OneWayConfig.daemonPlist)
     private var refreshing = false
+    private var attemptedServiceUpdate = false
     private let cacheKey = "lastKnownBlockList"
 
     init() {
@@ -71,9 +74,10 @@ final class AppModel: ObservableObject {
     }
     var canAdd: Bool { connected && !busy && healthy }
     var statusTitle: String {
+        if connected && healthy && session?.isActive() == true { return "Timed access is on" }
         if connected { return healthy ? (list.isEmpty ? "Ready for your first block" : "Background blocking is on") : "Blocking needs attention" }
         switch status {
-        case .requiresApproval: return "Approve OneWay in System Settings"
+        case .requiresApproval: return "Approve JustThirty in System Settings"
         case .enabled: return "Connecting to the background service"
         default: return "Set up background blocking"
         }
@@ -101,15 +105,47 @@ final class AppModel: ObservableObject {
         guard status == .enabled else { connected = false; healthy = false; return }
         refreshing = true
         defer { refreshing = false }
-        do { accept(try await ServiceClient.call { $0.snapshot(reply: $1) }) }
+        do {
+            let snapshot = try await ServiceClient.call { $0.snapshot(reply: $1) }
+            if snapshot.version != "1.3" && !attemptedServiceUpdate {
+                attemptedServiceUpdate = true
+                // The installed daemon keeps its old executable until re-registered.
+                // Its root-owned list and hosts rules are preserved throughout.
+                try await service.unregister()
+                try service.register()
+                status = service.status
+                connected = false
+                healthy = false
+                serviceIssue = "The updated background service is starting."
+                if status == .requiresApproval { SMAppService.openSystemSettingsLoginItems() }
+                return
+            }
+            accept(snapshot)
+        }
         catch { connected = false; healthy = false; serviceIssue = error.localizedDescription }
     }
     private func accept(_ snapshot: ServiceSnapshot) {
-        list = snapshot.list
+        if list != snapshot.list {
+            list = snapshot.list
+            if let data = try? JSONEncoder().encode(list) { UserDefaults.standard.set(data, forKey: cacheKey) }
+        }
+        if session != snapshot.session { session = snapshot.session }
         connected = true
         healthy = snapshot.ready
         serviceIssue = snapshot.issue
-        if let data = try? JSONEncoder().encode(list) { UserDefaults.standard.set(data, forKey: cacheKey) }
+    }
+    func resumeAccess() async {
+        guard canAdd else { return }
+        busy = true
+        defer { busy = false }
+        do { accept(try await ServiceClient.call { $0.resumeSession(reply: $1) }) }
+        catch { self.error = error.localizedDescription }
+    }
+    func endSession() async {
+        busy = true
+        defer { busy = false }
+        do { accept(try await ServiceClient.call { $0.endSession(reply: $1) }) }
+        catch { self.error = error.localizedDescription }
     }
     func addWebsite(_ site: WebsiteSuggestion) async -> Bool {
         guard canAdd else { return false }
@@ -136,6 +172,15 @@ final class AppModel: ObservableObject {
     func isBlocked(_ site: WebsiteSuggestion) -> Bool { MacDomain.expanded(site).isSubset(of: list.domains) }
 
     func reloadApps() {
+        guard !loadingApps else { return }
+        loadingApps = true
+        Task {
+            let apps = await Task.detached(priority: .utility) { Self.scanInstalledApps() }.value
+            installedApps = apps
+            loadingApps = false
+        }
+    }
+    private nonisolated static func scanInstalledApps() -> [BlockedApplication] {
         let locations = ["/Applications", "/System/Applications", NSHomeDirectory() + "/Applications"]
         var found: [String: BlockedApplication] = [:]
         for location in locations {
@@ -145,7 +190,7 @@ final class AppModel: ObservableObject {
                 if url.pathExtension == "app", let app = try? AppInspector.inspect(url.path) { found[app.bundleID] = app }
             }
         }
-        installedApps = found.values.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        return found.values.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
     func chooseApp() -> BlockedApplication? {
         let panel = NSOpenPanel()

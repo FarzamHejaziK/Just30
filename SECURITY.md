@@ -1,6 +1,6 @@
 # Security policy
 
-OneWay is an early personal-use project. Security fixes target the current `main` branch; there is no long-term support or response-time guarantee.
+JustThirty is preparing its first public release. Security fixes target the current `main` branch; there is no long-term support or response-time guarantee.
 
 ## Report a vulnerability privately
 
@@ -10,10 +10,10 @@ Never send Apple credentials, certificates/private keys, provisioning profiles, 
 
 ## Security boundary
 
-On Mac, a privileged service owns the list and hosts changes. The app and service authenticate each other by Apple code-signing anchor, team ID, and exact identifier. The public interface exposes only snapshot and add operations. A client-authentication bypass, arbitrary file write, arbitrary process termination, data corruption, or privilege escalation is a security issue.
+On Mac, a privileged service owns the list, daily budget, and hosts changes. The app and service authenticate each other by Apple code-signing anchor, team ID, and exact identifier. The interface exposes snapshots, additions, and bounded start/pause operations. It exposes no list deletion, budget reset, arbitrary commands, or unlimited unlock. A client-authentication bypass, arbitrary file write, arbitrary process termination, data corruption, or privilege escalation is a security issue.
 
 The signed app is a trusted client. An administrator who controls the machine or the signing key can change its behavior. The `--unsigned` build is for compilation and UI preview; it does not provide the authenticated production service.
 
-Revoking iPhone Screen Time access, disabling a Mac background service as administrator, and the documented hosts/browser limitations are outside OneWay's tamper-resistance guarantees. They can still warrant documentation or usability improvements.
+Revoking iPhone Screen Time access, disabling a Mac background service as administrator, and the documented hosts/browser limitations are outside JustThirty's tamper-resistance guarantees. They can still warrant documentation or usability improvements.
 
 See [architecture](docs/architecture.md) and [privacy](docs/privacy.md) for more detail.

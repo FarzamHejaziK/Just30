@@ -25,7 +25,7 @@ def config(unsigned=False):
 
 def prepare(build: Path, unsigned: bool):
     team, identity, app_id = config(unsigned)
-    contents = build / "OneWay.app" / "Contents"
+    contents = build / "JustThirty.app" / "Contents"
     generated = build / "generated"
     generated.mkdir(parents=True, exist_ok=True)
     (contents / "Library/LaunchDaemons").mkdir(parents=True, exist_ok=True)

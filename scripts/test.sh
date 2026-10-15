@@ -5,4 +5,7 @@ mkdir -p "$oneway_root/OneWay/.build"
 xcrun swiftc "$oneway_root/OneWay/OneWay/BlockList.swift" "$oneway_root/OneWay/Tests/BlockListTests.swift" \
     -o "$oneway_root/OneWay/.build/block-list-tests"
 "$oneway_root/OneWay/.build/block-list-tests"
+xcrun swiftc "$oneway_root/Shared/DailyAllowance.swift" "$oneway_root/Shared/AccessSession.swift" \
+    "$oneway_root/Shared/Tests/DailyAllowanceTests.swift" -o "$oneway_root/OneWay/.build/allowance-tests"
+"$oneway_root/OneWay/.build/allowance-tests"
 "$oneway_root/OneWayMac/test.sh"

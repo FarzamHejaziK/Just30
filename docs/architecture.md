@@ -8,20 +8,20 @@ OneWay has two native enforcement implementations and one shared principle: a co
 flowchart LR
   Picker[Screen Time picker / website search] --> Review[Review additions]
   Review --> Union[Validate union with saved list]
-  Union --> Disk[Atomic app-local JSON save]
+  Union --> Disk[Locked, atomic App Group JSON save]
   Disk --> Settings[Named ManagedSettings store]
   Settings --> OS[iOS enforcement]
 ```
 
 `BlockList.swift` owns the generic Codable sets, limits, domain parser, catalog, and atomic persistence. `BlockModel.swift` owns individual Family Controls authorization and applies the saved list to `OneWay.Permanent`. `OneWayApp.swift` presents pickers, confirmations, and read-only saved entries.
 
-Apple app/category/web tokens are opaque. The app does not attempt to reverse-map them into browsing or usage history. UI labels are provided by Apple's APIs. Opening or reauthorizing the app reapplies saved restrictions; OneWay does not expose a clear-store operation.
+Apple app/category/web tokens are opaque. The app does not attempt to reverse-map them into browsing or usage history. UI labels are provided by Apple's APIs. Opening or reauthorizing the app reapplies saved restrictions according to its timed-access state. The Device Activity extension restores restrictions at session expiry. See [daily access](daily-access.md).
 
 ## Mac
 
 ```mermaid
 flowchart LR
-  UI[SwiftUI app] -->|Authenticated XPC: add only| Service[Root launch daemon]
+  UI[SwiftUI app] -->|Authenticated XPC| Service[Root launch daemon]
   Service --> Disk[Validate and atomically save JSON]
   Disk --> Hosts[Merge own hosts section]
   Disk --> Watcher[Watch selected app processes]
@@ -29,11 +29,11 @@ flowchart LR
   Watcher --> Close[Terminate matching user apps]
 ```
 
-The UI is an ordinary user process. `SMAppService` registers a bundled launch daemon; macOS controls administrator approval and boot-time launch. The daemon runs independently of the app window. It exposes `snapshot`, `addDomains`, and `addApplication` through `NSXPCConnection`; there are no shell-command, removal, or reset methods.
+The UI is an ordinary user process. `SMAppService` registers a bundled launch daemon; macOS controls administrator approval and boot-time launch. The daemon runs independently of the app window. It exposes `snapshot`, `addDomains`, `addApplication`, `startSession`, and `endSession` through `NSXPCConnection`; there are no shell-command, removal, or reset methods.
 
 Both endpoints require the expected code-signing anchor, developer team, and exact executable identifier. `prepare-build.py` generates one build identity used by both executables and their plist files. Developer configuration stays in ignored files. An ad-hoc build cannot satisfy the production Apple signing requirement.
 
-`Core.swift` validates additions and persists data. `Enforcement.swift` merges only OneWay's hosts section, preserves surrounding content, backs up the original file before its first change, and flushes system DNS caches after changes. Host rules are checked every three seconds. These rules do not terminate existing browser connections or implement wildcard domain filtering.
+`Core.swift` validates additions and persists data. `Enforcement.swift` merges only OneWay's hosts section, preserves surrounding content, backs up the original file before its first change, and flushes system DNS caches after changes. Host rules are checked every three seconds. Hosts rules alone do not terminate existing browser connections or implement wildcard domain filtering. Session expiry additionally closes supported browsers to terminate existing connections.
 
 The app watcher polls about every 500 ms, examines executable paths and enclosing app bundles, and matches selected bundle IDs or original paths. It excludes protected recovery tools and non-user processes. It rechecks process identity before signaling, first using `SIGTERM`, then `SIGKILL` after a second if the process remains. This can lose unsaved application data and cannot prevent a launch from beginning.
 
@@ -41,7 +41,8 @@ The app watcher polls about every 500 ms, examines executable paths and enclosin
 
 | Data | Location | Authority |
 | --- | --- | --- |
-| iPhone list | App container, `Application Support/OneWay/block-list.json` | iPhone app |
+| iPhone list and session | App Group container, `allowance.json` | App and monitor extension, file-lock serialized |
+| Mac daily budget and session | `/Library/Application Support/OneWayMac/daily-access.json` | Root daemon; mode 600 |
 | Mac list | `/Library/Application Support/OneWayMac/block-list.json` | Root daemon; mode 600 in a mode-700 directory |
 | Mac original hosts backup | `/Library/Application Support/OneWayMac/hosts-before-oneway` | Root daemon |
 | Mac website rules | Marked section in `/private/etc/hosts` | Root daemon |

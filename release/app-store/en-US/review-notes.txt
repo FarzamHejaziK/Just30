@@ -1,0 +1,13 @@
+JustThirty is a free individual focus and productivity app. No app account or sign-in is required. It uses AuthorizationCenter.requestAuthorization(for: .individual), FamilyActivityPicker, ManagedSettings, and a DeviceActivityMonitor extension. It is not intended to manage another adult's device or serve advertising.
+
+Review flow:
+1. On a physical iPhone, enable Screen Time access in the app.
+2. Add a disposable test app or website. Review the permanent-add confirmation. There is no in-app removal/reset; use a test device because entries are add-only.
+3. With access paused, verify the selected target is shielded.
+4. Tap Start access, then Start. All saved entries share one combined 30-minute wall-clock allowance on this device.
+5. Tap Pause access: restrictions return and unused time is preserved. Resume access uses the remaining allowance. The timer runs in the background and while locked. The monitor extension restores restrictions at the scheduled end.
+6. The allowance resets at midnight in the time zone where it was initially created. Devices have independent allowances.
+
+No usage reports or browsing history are uploaded. Typed domain suggestions are local. Apple controls authorization and browser coverage. The in-app explanation discloses that iOS authorization revocation or deletion can bypass restrictions, and typed-domain filtering disables Safari Private Browsing.
+
+The existing bundle IDs are retained from the app's original OneWay name to preserve users' local data. The display name is JustThirty. The logo is unchanged.

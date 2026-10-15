@@ -1,17 +1,17 @@
-# Contributing to OneWay
+# Contributing to JustThirty
 
-Thanks for helping make OneWay more dependable and easier to use. This repository contains both native apps; keep changes focused on the platform or shared behavior they affect.
+Thanks for helping make JustThirty more dependable and easier to use. This repository contains both native apps and the marketing website; keep changes focused on the platform or shared behavior they affect.
 
 ## Before changing behavior
 
-Open an issue for substantial architectural changes. Small fixes and documentation corrections can go straight to a pull request. Read the [architecture](docs/architecture.md) and [platform limits](README.md#know-the-limits).
+Open an issue for substantial architectural changes. Small fixes and documentation corrections can go straight to a pull request. Read the [architecture](docs/architecture.md) and [platform limits](README.md#privacy-and-limits).
 
 Preserve these invariants:
 
 - Additions are unions. An omitted or unchecked item cannot remove a saved block.
 - Persist validated state before enforcing it or showing success.
 - Failed writes and corrupt files never silently replace a list with an empty list.
-- Do not add reset, pause, timer, or remove controls to the normal interface.
+- Preserve the shared 30-minute daily budget, explicit Start/Pause/Resume controls, and add-only lists. Do not add removal, reset, or unlimited-unlock controls.
 - Do not alter unrelated hosts entries, kill unrelated processes, or trust arbitrary clients of the privileged service.
 - Status text must distinguish saved configuration from verified enforcement.
 

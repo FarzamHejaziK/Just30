@@ -97,6 +97,9 @@
 				<string>000000000000000000000014</string>
 				<string>000000000000000000000015</string>
 				<string>000000000000000000000016</string>
+				<string>000000000000000000000110</string>
+				<string>000000000000000000000111</string>
+				<string>000000000000000000000112</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -121,6 +124,7 @@
 			<key>files</key>
 			<array>
 				<string>000000000000000000000019</string>
+				<string>000000000000000000000171</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -149,6 +153,7 @@
 			<key>children</key>
 			<array>
 				<string>000000000000000000000001</string>
+				<string>000000000000000000000122</string>
 			</array>
 			<key>name</key>
 			<string>Products</string>
@@ -164,6 +169,11 @@
 				<string>000000000000000000000028</string>
 				<string>000000000000000000000029</string>
 				<string>00000000000000000000005A</string>
+				<string>000000000000000000000100</string>
+				<string>000000000000000000000101</string>
+				<string>000000000000000000000102</string>
+				<string>000000000000000000000103</string>
+				<string>000000000000000000000170</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -181,7 +191,7 @@
 				<key>SDKROOT</key>
 				<string>iphoneos</string>
 				<key>IPHONEOS_DEPLOYMENT_TARGET</key>
-				<string>17.0</string>
+				<string>17.4</string>
 				<key>SWIFT_VERSION</key>
 				<string>5.0</string>
 				<key>SWIFT_OPTIMIZATION_LEVEL</key>
@@ -211,7 +221,7 @@
 				<key>GENERATE_INFOPLIST_FILE</key>
 				<string>YES</string>
 				<key>INFOPLIST_KEY_CFBundleDisplayName</key>
-				<string>OneWay</string>
+				<string>JustThirty</string>
 				<key>INFOPLIST_KEY_UILaunchScreen_Generation</key>
 				<string>YES</string>
 				<key>INFOPLIST_KEY_UIApplicationSceneManifest_Generation</key>
@@ -227,9 +237,9 @@
 				<key>SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD</key>
 				<string>NO</string>
 				<key>CURRENT_PROJECT_VERSION</key>
-				<string>3</string>
+				<string>7</string>
 				<key>MARKETING_VERSION</key>
-				<string>1.0</string>
+				<string>1.3</string>
 				<key>LD_RUNPATH_SEARCH_PATHS</key>
 				<array>
 					<string>$(inherited)</string>
@@ -237,6 +247,10 @@
 				</array>
 				<key>ASSETCATALOG_COMPILER_APPICON_NAME</key>
 				<string>AppIcon</string>
+				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
+				<string>$(ONEWAY_APP_ID)</string>
+				<key>INFOPLIST_FILE</key>
+				<string>OneWay/Info.plist</string>
 			</dict>
 			<key>baseConfigurationReference</key>
 			<string>00000000000000000000005A</string>
@@ -254,7 +268,7 @@
 				<key>SDKROOT</key>
 				<string>iphoneos</string>
 				<key>IPHONEOS_DEPLOYMENT_TARGET</key>
-				<string>17.0</string>
+				<string>17.4</string>
 				<key>SWIFT_VERSION</key>
 				<string>5.0</string>
 				<key>SWIFT_OPTIMIZATION_LEVEL</key>
@@ -263,6 +277,10 @@
 				<string>dwarf-with-dsym</string>
 				<key>ENABLE_TESTABILITY</key>
 				<string>NO</string>
+				<key>SWIFT_COMPILATION_MODE</key>
+				<string>wholemodule</string>
+				<key>DEAD_CODE_STRIPPING</key>
+				<string>YES</string>
 			</dict>
 		</dict>
 		<key>000000000000000000000035</key>
@@ -282,7 +300,7 @@
 				<key>GENERATE_INFOPLIST_FILE</key>
 				<string>YES</string>
 				<key>INFOPLIST_KEY_CFBundleDisplayName</key>
-				<string>OneWay</string>
+				<string>JustThirty</string>
 				<key>INFOPLIST_KEY_UILaunchScreen_Generation</key>
 				<string>YES</string>
 				<key>INFOPLIST_KEY_UIApplicationSceneManifest_Generation</key>
@@ -298,9 +316,9 @@
 				<key>SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD</key>
 				<string>NO</string>
 				<key>CURRENT_PROJECT_VERSION</key>
-				<string>3</string>
+				<string>7</string>
 				<key>MARKETING_VERSION</key>
-				<string>1.0</string>
+				<string>1.3</string>
 				<key>LD_RUNPATH_SEARCH_PATHS</key>
 				<array>
 					<string>$(inherited)</string>
@@ -308,6 +326,14 @@
 				</array>
 				<key>ASSETCATALOG_COMPILER_APPICON_NAME</key>
 				<string>AppIcon</string>
+				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
+				<string>$(ONEWAY_APP_ID)</string>
+				<key>INFOPLIST_FILE</key>
+				<string>OneWay/Info.plist</string>
+				<key>SWIFT_COMPILATION_MODE</key>
+				<string>wholemodule</string>
+				<key>DEAD_CODE_STRIPPING</key>
+				<string>YES</string>
 			</dict>
 			<key>baseConfigurationReference</key>
 			<string>00000000000000000000005A</string>
@@ -351,11 +377,14 @@
 				<string>00000000000000000000001E</string>
 				<string>00000000000000000000001F</string>
 				<string>000000000000000000000020</string>
+				<string>000000000000000000000161</string>
 			</array>
 			<key>buildRules</key>
 			<array/>
 			<key>dependencies</key>
-			<array/>
+			<array>
+				<string>00000000000000000000015F</string>
+			</array>
 			<key>name</key>
 			<string>OneWay</string>
 			<key>productName</key>
@@ -377,13 +406,34 @@
 				<dict>
 					<key>000000000000000000000046</key>
 					<dict>
-						<key>CreatedOnToolsVersion</key>
-						<string>26.6</string>
 						<key>ProvisioningStyle</key>
 						<string>Automatic</string>
 						<key>SystemCapabilities</key>
 						<dict>
 							<key>com.apple.FamilyControls</key>
+							<dict>
+								<key>enabled</key>
+								<integer>1</integer>
+							</dict>
+							<key>com.apple.ApplicationGroups.iOS</key>
+							<dict>
+								<key>enabled</key>
+								<integer>1</integer>
+							</dict>
+						</dict>
+					</dict>
+					<key>000000000000000000000154</key>
+					<dict>
+						<key>ProvisioningStyle</key>
+						<string>Automatic</string>
+						<key>SystemCapabilities</key>
+						<dict>
+							<key>com.apple.FamilyControls</key>
+							<dict>
+								<key>enabled</key>
+								<integer>1</integer>
+							</dict>
+							<key>com.apple.ApplicationGroups.iOS</key>
 							<dict>
 								<key>enabled</key>
 								<integer>1</integer>
@@ -416,6 +466,7 @@
 			<key>targets</key>
 			<array>
 				<string>000000000000000000000046</string>
+				<string>000000000000000000000154</string>
 			</array>
 		</dict>
 		<key>00000000000000000000000F</key>
@@ -446,6 +497,361 @@
 			<string>Config.xcconfig</string>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
+		</dict>
+		<key>000000000000000000000100</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>../Shared/DailyAllowance.swift</string>
+			<key>sourceTree</key>
+			<string>SOURCE_ROOT</string>
+		</dict>
+		<key>000000000000000000000101</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>../Shared/AccessSession.swift</string>
+			<key>sourceTree</key>
+			<string>SOURCE_ROOT</string>
+		</dict>
+		<key>000000000000000000000102</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>OneWay/AllowanceStore.swift</string>
+			<key>sourceTree</key>
+			<string>SOURCE_ROOT</string>
+		</dict>
+		<key>000000000000000000000103</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>OneWayMonitor/Monitor.swift</string>
+			<key>sourceTree</key>
+			<string>SOURCE_ROOT</string>
+		</dict>
+		<key>000000000000000000000110</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000100</string>
+		</dict>
+		<key>000000000000000000000111</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000101</string>
+		</dict>
+		<key>000000000000000000000112</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000102</string>
+		</dict>
+		<key>000000000000000000000122</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>explicitFileType</key>
+			<string>wrapper.app-extension</string>
+			<key>path</key>
+			<string>OneWayMonitor.appex</string>
+			<key>sourceTree</key>
+			<string>BUILT_PRODUCTS_DIR</string>
+		</dict>
+		<key>000000000000000000000136</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000100</string>
+		</dict>
+		<key>000000000000000000000137</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000101</string>
+		</dict>
+		<key>000000000000000000000138</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000102</string>
+		</dict>
+		<key>000000000000000000000139</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000103</string>
+		</dict>
+		<key>00000000000000000000013A</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>00000000000000000000000C</string>
+		</dict>
+		<key>00000000000000000000012C</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXSourcesBuildPhase</string>
+			<key>buildActionMask</key>
+			<integer>2147483647</integer>
+			<key>files</key>
+			<array>
+				<string>000000000000000000000136</string>
+				<string>000000000000000000000137</string>
+				<string>000000000000000000000138</string>
+				<string>000000000000000000000139</string>
+				<string>00000000000000000000013A</string>
+			</array>
+			<key>runOnlyForDeploymentPostprocessing</key>
+			<integer>0</integer>
+		</dict>
+		<key>00000000000000000000012D</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFrameworksBuildPhase</string>
+			<key>buildActionMask</key>
+			<integer>2147483647</integer>
+			<key>files</key>
+			<array/>
+			<key>runOnlyForDeploymentPostprocessing</key>
+			<integer>0</integer>
+		</dict>
+		<key>00000000000000000000014A</key>
+		<dict>
+			<key>isa</key>
+			<string>XCBuildConfiguration</string>
+			<key>name</key>
+			<string>Debug</string>
+			<key>baseConfigurationReference</key>
+			<string>00000000000000000000005A</string>
+			<key>buildSettings</key>
+			<dict>
+				<key>PRODUCT_NAME</key>
+				<string>$(TARGET_NAME)</string>
+				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
+				<string>$(ONEWAY_APP_ID).monitor</string>
+				<key>CODE_SIGN_STYLE</key>
+				<string>Automatic</string>
+				<key>CODE_SIGN_ENTITLEMENTS</key>
+				<string>OneWayMonitor/Monitor.entitlements</string>
+				<key>INFOPLIST_FILE</key>
+				<string>OneWayMonitor/Info.plist</string>
+				<key>GENERATE_INFOPLIST_FILE</key>
+				<string>NO</string>
+				<key>SKIP_INSTALL</key>
+				<string>YES</string>
+				<key>APPLICATION_EXTENSION_API_ONLY</key>
+				<string>YES</string>
+				<key>TARGETED_DEVICE_FAMILY</key>
+				<string>1</string>
+				<key>CURRENT_PROJECT_VERSION</key>
+				<string>7</string>
+				<key>MARKETING_VERSION</key>
+				<string>1.3</string>
+				<key>LD_RUNPATH_SEARCH_PATHS</key>
+				<array>
+					<string>$(inherited)</string>
+					<string>@executable_path/Frameworks</string>
+					<string>@executable_path/../../Frameworks</string>
+				</array>
+			</dict>
+		</dict>
+		<key>00000000000000000000014B</key>
+		<dict>
+			<key>isa</key>
+			<string>XCBuildConfiguration</string>
+			<key>name</key>
+			<string>Release</string>
+			<key>baseConfigurationReference</key>
+			<string>00000000000000000000005A</string>
+			<key>buildSettings</key>
+			<dict>
+				<key>PRODUCT_NAME</key>
+				<string>$(TARGET_NAME)</string>
+				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
+				<string>$(ONEWAY_APP_ID).monitor</string>
+				<key>CODE_SIGN_STYLE</key>
+				<string>Automatic</string>
+				<key>CODE_SIGN_ENTITLEMENTS</key>
+				<string>OneWayMonitor/Monitor.entitlements</string>
+				<key>INFOPLIST_FILE</key>
+				<string>OneWayMonitor/Info.plist</string>
+				<key>GENERATE_INFOPLIST_FILE</key>
+				<string>NO</string>
+				<key>SKIP_INSTALL</key>
+				<string>YES</string>
+				<key>APPLICATION_EXTENSION_API_ONLY</key>
+				<string>YES</string>
+				<key>TARGETED_DEVICE_FAMILY</key>
+				<string>1</string>
+				<key>CURRENT_PROJECT_VERSION</key>
+				<string>7</string>
+				<key>MARKETING_VERSION</key>
+				<string>1.3</string>
+				<key>LD_RUNPATH_SEARCH_PATHS</key>
+				<array>
+					<string>$(inherited)</string>
+					<string>@executable_path/Frameworks</string>
+					<string>@executable_path/../../Frameworks</string>
+				</array>
+				<key>SWIFT_COMPILATION_MODE</key>
+				<string>wholemodule</string>
+				<key>DEAD_CODE_STRIPPING</key>
+				<string>YES</string>
+			</dict>
+		</dict>
+		<key>00000000000000000000014C</key>
+		<dict>
+			<key>isa</key>
+			<string>XCConfigurationList</string>
+			<key>buildConfigurations</key>
+			<array>
+				<string>00000000000000000000014A</string>
+				<string>00000000000000000000014B</string>
+			</array>
+			<key>defaultConfigurationIsVisible</key>
+			<integer>0</integer>
+			<key>defaultConfigurationName</key>
+			<string>Release</string>
+		</dict>
+		<key>000000000000000000000154</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXNativeTarget</string>
+			<key>buildConfigurationList</key>
+			<string>00000000000000000000014C</string>
+			<key>buildPhases</key>
+			<array>
+				<string>00000000000000000000012C</string>
+				<string>00000000000000000000012D</string>
+				<string>000000000000000000000174</string>
+			</array>
+			<key>buildRules</key>
+			<array/>
+			<key>dependencies</key>
+			<array/>
+			<key>name</key>
+			<string>OneWayMonitor</string>
+			<key>productName</key>
+			<string>OneWayMonitor</string>
+			<key>productReference</key>
+			<string>000000000000000000000122</string>
+			<key>productType</key>
+			<string>com.apple.product-type.app-extension</string>
+		</dict>
+		<key>00000000000000000000015E</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXContainerItemProxy</string>
+			<key>containerPortal</key>
+			<string>000000000000000000000050</string>
+			<key>proxyType</key>
+			<integer>1</integer>
+			<key>remoteGlobalIDString</key>
+			<string>000000000000000000000154</string>
+			<key>remoteInfo</key>
+			<string>OneWayMonitor</string>
+		</dict>
+		<key>00000000000000000000015F</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXTargetDependency</string>
+			<key>target</key>
+			<string>000000000000000000000154</string>
+			<key>targetProxy</key>
+			<string>00000000000000000000015E</string>
+		</dict>
+		<key>000000000000000000000160</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000122</string>
+			<key>settings</key>
+			<dict>
+				<key>ATTRIBUTES</key>
+				<array>
+					<string>RemoveHeadersOnCopy</string>
+				</array>
+			</dict>
+		</dict>
+		<key>000000000000000000000161</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXCopyFilesBuildPhase</string>
+			<key>buildActionMask</key>
+			<integer>2147483647</integer>
+			<key>dstPath</key>
+			<string></string>
+			<key>dstSubfolderSpec</key>
+			<integer>13</integer>
+			<key>files</key>
+			<array>
+				<string>000000000000000000000160</string>
+			</array>
+			<key>name</key>
+			<string>Embed App Extensions</string>
+			<key>runOnlyForDeploymentPostprocessing</key>
+			<integer>0</integer>
+		</dict>
+		<key>000000000000000000000170</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>text.xml</string>
+			<key>path</key>
+			<string>OneWay/PrivacyInfo.xcprivacy</string>
+			<key>sourceTree</key>
+			<string>SOURCE_ROOT</string>
+		</dict>
+		<key>000000000000000000000171</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000170</string>
+		</dict>
+		<key>000000000000000000000173</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000170</string>
+		</dict>
+		<key>000000000000000000000174</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXResourcesBuildPhase</string>
+			<key>buildActionMask</key>
+			<integer>2147483647</integer>
+			<key>files</key>
+			<array>
+				<string>000000000000000000000173</string>
+			</array>
+			<key>runOnlyForDeploymentPostprocessing</key>
+			<integer>0</integer>
 		</dict>
 	</dict>
 	<key>rootObject</key>
