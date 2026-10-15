@@ -48,6 +48,26 @@ enum AllowanceStore {
             ? .specific(Set(state.list.domains.map { WebDomain(domain: $0) })) : nil
     }
 
+    static func startAccess() throws -> AllowanceState {
+        let monitor = DeviceActivityCenter()
+        var committed: AllowanceState?
+        try MonitoredSessionStart.run(
+            read: { try transaction { $0.session } },
+            arm: { try monitor.startMonitoring(activity, during: schedule(ending: $0)) },
+            commit: { previous, proposed in
+                committed = try transaction { state in
+                    // Preserve concurrent list additions. A changed session must
+                    // be retried, never overwritten by an older reservation.
+                    guard state.session == previous else { throw AccessSessionError.unavailable }
+                    state.session = proposed
+                    return state
+                }
+            },
+            cancel: { monitor.stopMonitoring([activity]) })
+        guard let committed else { throw AccessSessionError.unavailable }
+        return committed
+    }
+
     static func schedule(ending end: Date, now: Date = Date()) -> DeviceActivitySchedule {
         // Device Activity requires intervals of at least 15 minutes. Start in the
         // recent past so even a five-minute access session has a valid interval.

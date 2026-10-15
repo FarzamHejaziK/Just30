@@ -86,6 +86,7 @@ final class AppModel: ObservableObject {
     func setUp() async {
         busy = true
         defer { busy = false }
+        attemptedServiceUpdate = false
         do {
             if service.status == .notRegistered || service.status == .notFound { try service.register() }
             status = service.status
@@ -107,22 +108,37 @@ final class AppModel: ObservableObject {
         defer { refreshing = false }
         do {
             let snapshot = try await ServiceClient.call { $0.snapshot(reply: $1) }
-            if snapshot.version != "1.3" && !attemptedServiceUpdate {
-                attemptedServiceUpdate = true
-                // The installed daemon keeps its old executable until re-registered.
-                // Its root-owned list and hosts rules are preserved throughout.
-                try await service.unregister()
-                try service.register()
-                status = service.status
+            let expectedBuild = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+            if snapshot.version != "1.3" || snapshot.build != expectedBuild {
                 connected = false
                 healthy = false
-                serviceIssue = "The updated background service is starting."
-                if status == .requiresApproval { SMAppService.openSystemSettingsLoginItems() }
+                serviceIssue = "The background service needs an update. Choose Set up to finish updating it. Your saved list is preserved."
+                if !attemptedServiceUpdate {
+                    attemptedServiceUpdate = true
+                    // The installed daemon keeps its old executable until re-registered.
+                    // Its root-owned list and hosts rules are preserved throughout.
+                    try await service.unregister()
+                    try await registerUpdatedService()
+                    status = service.status
+                    serviceIssue = "The updated background service is starting."
+                    if status == .requiresApproval { SMAppService.openSystemSettingsLoginItems() }
+                }
                 return
             }
             accept(snapshot)
         }
         catch { connected = false; healthy = false; serviceIssue = error.localizedDescription }
+    }
+    private func registerUpdatedService() async throws {
+        // macOS can finish unregistering after the async call returns. Retry
+        // registration briefly, without changing its administrator approval.
+        for attempt in 0..<3 {
+            do { try service.register(); return }
+            catch {
+                guard attempt < 2, service.status == .notRegistered else { throw error }
+                try await Task.sleep(nanoseconds: UInt64(attempt + 1) * 500_000_000)
+            }
+        }
     }
     private func accept(_ snapshot: ServiceSnapshot) {
         if list != snapshot.list {

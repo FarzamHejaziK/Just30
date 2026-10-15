@@ -107,7 +107,8 @@ final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate
 
     private func respond(_ reply: @escaping (Data?, String?) -> Void) {
         do {
-            let snapshot = ServiceSnapshot(list: list, ready: loaded && issue == nil, issue: issue, version: "1.3", session: sessionLoaded ? session : nil)
+            let snapshot = ServiceSnapshot(list: list, ready: loaded && issue == nil, issue: issue, version: "1.3",
+                session: sessionLoaded ? session : nil, build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String)
             reply(try JSONEncoder().encode(snapshot), nil)
         } catch { reply(nil, error.localizedDescription) }
     }

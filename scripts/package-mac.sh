@@ -30,6 +30,9 @@ ln -s /Applications "$release_stage/Applications"
 cp "$release_root/release/mac/READ-ME-FIRST.txt" "$release_stage/Read me first.txt"
 hdiutil create -volname JustThirty -srcfolder "$release_stage" -ov -format UDZO "$release_dmg"
 if [[ -n "$release_profile" ]]; then
+  release_identity="$(cat "$release_root/OneWayMac/.build/generated/signing-identity")"
+  codesign --force --timestamp --sign "$release_identity" "$release_dmg"
+  codesign --verify --strict "$release_dmg"
   # Notarize the disk image too, so its own Gatekeeper assessment is verified.
   xcrun notarytool submit "$release_dmg" --keychain-profile "$release_profile" --wait --output-format json > "$release_dir/dmg-notarization.json"
   python3 - "$release_dir/dmg-notarization.json" <<'PY'

@@ -11,7 +11,9 @@ JustThirty was originally named OneWay. The repository, internal bundle IDs, ser
 
 ## Release status
 
-Version 1.3 is being prepared for public distribution. **There is no published App Store release or verified notarized Mac download yet.** See the [release checklist](release/README.md) for gates and the [App Store materials](release/app-store/en-US/metadata.json) for prepared copy. A successful build is not proof of Screen Time enforcement.
+Version 1.3 is being prepared for public distribution. **The iPhone app is not published on the App Store.** Apple has accepted the signed universal Mac package for notarization; Gatekeeper and its stapled ticket pass verification. See the [release checklist](release/README.md), [validation report](release/QA.md), and [App Store materials](release/app-store/en-US/metadata.json). A successful build is not proof of Screen Time enforcement.
+
+Visit [justthirty.vercel.app](https://justthirty.vercel.app) for the product overview, interactive preview, [support](https://justthirty.vercel.app/support/), and [privacy policy](https://justthirty.vercel.app/privacy/).
 
 | | iPhone | Mac |
 | --- | --- | --- |
@@ -74,6 +76,8 @@ python3 -m http.server 4173 --directory website
 ```
 
 The iOS script archives and exports without uploading. It fails if distribution entitlements are unavailable. The Mac script builds both architectures, signs, notarizes, staples, and assesses the artifacts. Without a notary profile it creates a clearly marked unnotarized package for preparation only. Do not distribute that package as a finished release.
+
+Alternatively, run `./scripts/archive-mac.sh`, open the resulting archive in Xcode, and choose **Distribute App → Direct Distribution**. After Apple accepts it, export the notarized app and run `./scripts/package-notarized-mac.sh /absolute/path/to/JustThirty.app`. This route uses the signed-in Xcode account and packages the accepted bundle without re-signing it.
 
 The `website/` directory is a buildless, responsive Vercel site with an interactive timer preview, privacy policy, and support page. The demo controls no restrictions. Deploy only that directory, keeping signing files and device data out of uploads.
 

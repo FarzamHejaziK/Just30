@@ -10,5 +10,8 @@
   "signInRequired": false,
   "price": "Free",
   "primaryCategory": "PRODUCTIVITY",
-  "secondaryCategory": "UTILITIES"
+  "secondaryCategory": "UTILITIES",
+  "marketingURL": "https://justthirty.vercel.app/",
+  "supportURL": "https://justthirty.vercel.app/support/",
+  "privacyPolicyURL": "https://justthirty.vercel.app/privacy/"
 }

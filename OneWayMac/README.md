@@ -50,6 +50,8 @@ For a credential-free compile/UI preview, use `./build.sh --unsigned`. It writes
 
 Signed builds use Developer ID and the hardened runtime. Use `../scripts/package-mac.sh YourNotaryKeychainProfile` for notarization, stapling, Gatekeeper assessment, and a distributable disk image. Without a profile the script produces an explicitly unnotarized preparation package. Do not offer that as a public download.
 
+An alternative using the signed-in Xcode account is `../scripts/archive-mac.sh`. Open the archive, choose **Distribute App → Direct Distribution**, wait for Apple's acceptance, then export the notarized app. Run `../scripts/package-notarized-mac.sh /absolute/path/to/JustThirty.app` to validate both architectures, the signature, staple, and Gatekeeper before creating a ZIP and portable SHA-256 checksum. Do not rebuild or re-sign the exported app after notarization.
+
 The test suite uses temporary state and hosts files and a disposable app process. It covers monotonic additions, disk persistence, corrupt data, save failures, domain validation, aliases and lookalikes, existing hosts preservation, marker corruption, permissions, backups, symlink rejection, nested app helpers, termination/relaunch, and leaving unrelated processes alone. It never adds real sites or apps to the user's permanent list or changes the real hosts file.
 
 ## Maintenance

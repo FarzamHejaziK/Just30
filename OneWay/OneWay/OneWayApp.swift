@@ -48,7 +48,7 @@ struct HomeView: View {
                         if let issue = model.error, !model.loaded { Text(issue).font(.footnote).foregroundStyle(.orange) }
                         if !model.approved {
                             Button("Enable Screen Time Access") { Task { await model.authorize() } }
-                                .buttonStyle(.borderedProminent).disabled(model.busy || !model.loaded)
+                                .buttonStyle(.borderedProminent).foregroundStyle(.black).disabled(model.busy || !model.loaded)
                         }
                     }.padding(20).frame(maxWidth: .infinity, alignment: .leading).background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 22))
 
@@ -60,7 +60,7 @@ struct HomeView: View {
                     actionLayout {
                         addButton("Add apps", detail: "Apps & categories", icon: "square.grid.2x2.fill") { showApps = true }
                         addButton("Add websites", detail: "Domains & links", icon: "globe") { showWebsites = true }
-                    }.disabled(!model.approved || !model.loaded)
+                    }.disabled(!model.approved || !model.loaded || model.busy)
 
                     VStack(alignment: .leading, spacing: 16) {
                         Text("YOUR BLOCK LIST").font(.caption.weight(.semibold)).tracking(2).foregroundStyle(.secondary)
@@ -100,18 +100,21 @@ struct HomeView: View {
             .alert("Couldn't update the block list", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
                 Button("OK") { model.error = nil }
             } message: { Text(model.error ?? "") }
-            .onReceive(timer) { _ in if phase == .active { model.refreshIfNeeded() } }
-            .confirmationDialog("Start access?", isPresented: $confirmAccess, titleVisibility: .visible) {
-                Button("Start timer and unlock") { model.resumeAccess() }
-            } message: {
-                Text("All saved apps and websites unlock together. The timer runs until you tap Pause access, even if you switch away or lock your phone. Pausing blocks everything again and keeps your unused time for later today.")
+            .onReceive(timer) { _ in if phase == .active { Task { await model.refreshIfNeeded() } } }
+            .sheet(isPresented: $confirmAccess) {
+                ConfirmationSheet(title: "Start access?",
+                    message: "All saved apps and websites unlock together. The timer runs until you tap Pause access, even if you switch away or lock your phone. Pausing blocks everything again and keeps your unused time for later today.",
+                    actionTitle: "Start timer and unlock") {
+                    await model.resumeAccess()
+                    if model.session.isActive() { confirmAccess = false }
+                }
             }
-            .onChange(of: phase) { _, value in if value == .active { model.refresh() } }
+            .onChange(of: phase) { _, value in if value == .active { Task { await model.refresh() } } }
         }.tint(accent).preferredColorScheme(.dark)
     }
 
     private var status: String {
-        if !model.loaded { return "Saved list needs attention" }
+        if !model.loaded { return model.busy ? "Loading saved blocks…" : "Saved list needs attention" }
         if !model.approved { return "Screen Time access required" }
         return model.list.isEmpty ? "Ready for your first block" : model.session.isActive() ? "Timed access is on" : "Blocking enabled"
     }
@@ -123,7 +126,7 @@ struct HomeView: View {
             if model.session.isActive(), let end = model.session.endsAt {
                 Text(end, style: .timer).font(.system(.largeTitle, design: .rounded).weight(.bold)).monospacedDigit()
                 Text("Tap Pause to save your remaining time, or let the timer finish to block everything again.").font(.subheadline).foregroundStyle(.secondary)
-                Button("Pause access") { model.endSession() }.buttonStyle(.bordered)
+                Button("Pause access") { Task { await model.endSession() } }.buttonStyle(.bordered).disabled(model.busy)
             } else {
                 Text("\(AccessSession.clock(model.session.budget.remaining)) left today")
                     .font(.title3.weight(.semibold))
@@ -134,7 +137,7 @@ struct HomeView: View {
                 } label: {
                     Label(model.session.budget.used > 0 ? "Resume access" : "Start access", systemImage: "play.fill")
                 }.buttonStyle(.borderedProminent).foregroundStyle(.black)
-                    .disabled(!model.approved || !model.loaded || model.list.isEmpty || model.session.budget.remaining < 1)
+                    .disabled(!model.approved || !model.loaded || model.list.isEmpty || model.busy || model.session.budget.remaining < 1)
             }
         }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
             .background(accent.opacity(0.07), in: RoundedRectangle(cornerRadius: 22))
@@ -197,9 +200,13 @@ struct AddAppsView: View {
                     }.disabled(!hasSelection)
                 }
             }
-            .confirmationDialog("Add these blocks?", isPresented: $confirm, titleVisibility: .visible) {
-                Button("Add to block list") { if model.add(selection: draft) { dismiss() } }
-            } message: { Text("These additions cannot be removed in JustThirty. Entire categories also block other apps and websites in those categories.") }
+            .sheet(isPresented: $confirm) {
+                ConfirmationSheet(title: "Add these blocks?",
+                    message: "\(draft.applicationTokens.count) apps, \(draft.categoryTokens.count) categories, and \(draft.webDomainTokens.count) websites selected.\n\nThese additions cannot be removed in JustThirty. Entire categories also block other apps and websites in those categories.",
+                    actionTitle: "Add to block list") {
+                    if await model.add(selection: draft) { confirm = false; dismiss() }
+                }
+            }
         }
     }
 }
@@ -207,6 +214,7 @@ struct AddAppsView: View {
 struct AddWebsitesView: View {
     @EnvironmentObject private var model: BlockModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
     @FocusState private var searchFocused: Bool
     @State private var input = ""
     @State private var pending: WebsiteSuggestion?
@@ -276,14 +284,17 @@ struct AddWebsitesView: View {
 
                     if !model.list.domains.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            HStack {
+                            let headingLayout = typeSize.isAccessibilitySize
+                                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+                                : AnyLayout(HStackLayout())
+                            headingLayout {
                                 Text("ALREADY BLOCKED").font(.caption.weight(.semibold)).tracking(1.5)
-                                Spacer()
+                                if !typeSize.isAccessibilitySize { Spacer() }
                                 Text("\(model.list.domains.count)/50 domains").font(.caption)
                             }.foregroundStyle(.secondary)
                             ForEach(model.list.domains.sorted(), id: \.self) { domain in
                                 HStack {
-                                    Text(domain).font(.subheadline)
+                                    Text(domain).font(.subheadline).fixedSize(horizontal: false, vertical: true)
                                     Spacer()
                                     Image(systemName: "lock.fill").font(.caption).foregroundStyle(accent)
                                 }.padding(.vertical, 5)
@@ -292,6 +303,7 @@ struct AddWebsitesView: View {
                     }
                     Text("Suggestions stay on your phone. Website filtering also turns off Safari Private Browsing and depends on browser support.")
                         .font(.footnote).foregroundStyle(.secondary)
+                    if typeSize.isAccessibilitySize { websiteAction }
                 }.padding(24)
             }
             .scrollDismissesKeyboard(.interactively)
@@ -301,54 +313,68 @@ struct AddWebsitesView: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
             .safeAreaInset(edge: .bottom) {
-                if candidate != nil {
-                    VStack(spacing: 10) {
-                        Button(action: review) {
-                            Label(alreadyBlocked ? "Already blocked" : "Block this website", systemImage: alreadyBlocked ? "checkmark.shield.fill" : "lock.fill")
-                                .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 10)
-                        }
-                        .buttonStyle(.borderedProminent).controlSize(.large)
-                        .disabled(alreadyBlocked || capacityExceeded || !model.approved)
-                        Text(capacityExceeded ? "This would exceed the 50-domain limit." : "Once added, you can't remove it in JustThirty.")
-                            .font(.caption).foregroundStyle(capacityExceeded ? .orange : .secondary)
-                    }.padding(.horizontal, 24).padding(.vertical, 14).background(.ultraThinMaterial)
+                if candidate != nil && !typeSize.isAccessibilitySize {
+                    websiteAction.padding(.horizontal, 24).padding(.vertical, 14).background(.ultraThinMaterial)
                 }
             }
             .onChange(of: input) { _, value in
                 if !value.isEmpty { success = nil }
                 model.error = nil
             }
-            .confirmationDialog("Block \(pending?.name ?? "this website")?", isPresented: $showConfirmation, titleVisibility: .visible) {
-                Button("Add permanent block") {
-                    guard let site = pending else { return }
-                    if model.add(domains: site.domains) {
+            .sheet(isPresented: $showConfirmation) {
+                if let site = pending {
+                    ConfirmationSheet(title: "Block \(site.name)?",
+                        message: site.domains.sorted().joined(separator: "\n") + "\n\nThese domains will stay in your block list. There is no undo in JustThirty.",
+                        actionTitle: "Add permanent block") {
+                    if await model.add(domains: site.domains) {
                         input = ""
                         searchFocused = false
                         success = "\(site.name) added to your block list"
+                        showConfirmation = false
+                    }
                     }
                 }
-            } message: {
-                Text((pending?.domains.sorted().joined(separator: "\n") ?? "") + "\n\nThese domains will stay in your block list. There is no undo in JustThirty.")
             }
         }.tint(accent).preferredColorScheme(.dark)
     }
 
+    @ViewBuilder private var websiteAction: some View {
+        if candidate != nil {
+            VStack(spacing: 10) {
+                Button(action: review) {
+                    Label(alreadyBlocked ? "Already blocked" : "Block this website", systemImage: alreadyBlocked ? "checkmark.shield.fill" : "lock.fill")
+                        .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .buttonStyle(.borderedProminent).controlSize(.large).foregroundStyle(.black)
+                .disabled(alreadyBlocked || capacityExceeded || !model.approved)
+                Text(capacityExceeded ? "This would exceed the 50-domain limit." : "Once added, you can't remove it in JustThirty.")
+                    .font(.caption).foregroundStyle(capacityExceeded ? .orange : .secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
     private func preview(_ site: WebsiteSuggestion) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 14) {
+            let headerLayout = typeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 14))
+                : AnyLayout(HStackLayout(spacing: 14))
+            headerLayout {
                 siteIcon(site.symbol)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(site.name).font(.title3.weight(.semibold))
                     Text(alreadyBlocked ? "Already in your block list" : "Ready to block")
                         .font(.subheadline).foregroundStyle(accent)
                 }
-                Spacer(minLength: 0)
+                if !typeSize.isAccessibilitySize { Spacer(minLength: 0) }
                 Image(systemName: alreadyBlocked ? "checkmark.shield.fill" : "arrow.down.circle")
                     .foregroundStyle(accent)
             }
             Divider()
             ForEach(site.domains.sorted(), id: \.self) { domain in
                 Label(domain, systemImage: "globe").font(.subheadline).textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Text("Blocks whole domains, not just the page in a pasted link.")
                 .font(.caption).foregroundStyle(.secondary)
@@ -363,13 +389,16 @@ struct AddWebsitesView: View {
             input = site.domain
             searchFocused = false
         } label: {
-            HStack(spacing: 14) {
+            let rowLayout = typeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 14))
+                : AnyLayout(HStackLayout(spacing: 14))
+            rowLayout {
                 siteIcon(site.symbol)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(site.name).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
                     Text(site.domain).font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
+                }.fixedSize(horizontal: false, vertical: true)
+                if !typeSize.isAccessibilitySize { Spacer() }
                 if blocked {
                     Label("Blocked", systemImage: "checkmark").font(.caption).foregroundStyle(accent)
                 } else {
@@ -393,6 +422,38 @@ struct AddWebsitesView: View {
     }
 }
 
+/// Scrollable review keeps the complete warning and action reachable at every
+/// Dynamic Type size, including compact phones where system popovers truncate.
+struct ConfirmationSheet: View {
+    @EnvironmentObject private var model: BlockModel
+    @Environment(\.dismiss) private var dismiss
+    let title: String
+    let message: String
+    let actionTitle: String
+    let action: () async -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    Text(title).font(.title.bold()).accessibilityAddTraits(.isHeader)
+                    Text(message).font(.body).fixedSize(horizontal: false, vertical: true)
+                    if let error = model.error { Text(error).foregroundStyle(.orange) }
+                    Button { Task { await action() } } label: {
+                        Text(actionTitle).font(.headline)
+                            .frame(maxWidth: .infinity).padding(.vertical, 10)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }.buttonStyle(.borderedProminent).controlSize(.large).foregroundStyle(.black).disabled(model.busy)
+                    if model.busy { ProgressView("Updating access…") }
+                }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .navigationTitle("Review").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.disabled(model.busy) } }
+            .interactiveDismissDisabled(model.busy)
+        }.tint(Color(red: 0.62, green: 0.89, blue: 0.62)).preferredColorScheme(.dark)
+    }
+}
+
 
 struct AboutView: View {
     var body: some View {
@@ -406,8 +467,8 @@ struct AboutView: View {
             }
             Section("Privacy") {
                 Text("Your selections and timer stay on your device. No account, analytics, advertising, or cloud sync. Website suggestions are searched locally. We do not receive your browsing history or selected apps.")
-                Link("Privacy policy", destination: URL(string: "https://github.com/FarzamHejaziK/OneWay/blob/main/docs/privacy.md")!)
-                Link("Help and support", destination: URL(string: "https://github.com/FarzamHejaziK/OneWay/discussions")!)
+                Link("Privacy policy", destination: URL(string: "https://justthirty.vercel.app/privacy/")!)
+                Link("Help and support", destination: URL(string: "https://justthirty.vercel.app/support/")!)
                 Text("Public support posts are visible to others. Do not include your private block list or personal information.").font(.footnote)
             }
             Section {

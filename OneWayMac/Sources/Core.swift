@@ -160,6 +160,7 @@ struct ServiceSnapshot: Codable {
     let issue: String?
     let version: String
     var session: AccessSession? = nil
+    var build: String? = nil
 }
 
 enum StateFile {

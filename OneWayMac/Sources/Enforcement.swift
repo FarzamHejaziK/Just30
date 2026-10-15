@@ -62,7 +62,7 @@ struct ProcessIdentity: Equatable {
 
 final class AppEnforcer {
     private var signaled: [Int32: (ProcessIdentity, Date)] = [:]
-    private var bundleIDs: [String: Set<String>] = [:]
+    private var bundleInfo: [String: (paths: Set<String>, ids: Set<String>)] = [:]
 
     static func identity(_ pid: Int32) -> ProcessIdentity? {
         var info = proc_bsdinfo()
@@ -88,16 +88,18 @@ final class AppEnforcer {
         var active: Set<Int32> = []
         for pid in pids.prefix(min(Int(actual), pids.count)) where pid > 1 && pid != getpid() {
             guard let identity = Self.identity(pid), !identity.path.hasPrefix("/System/Library/") else { continue }
-            let parents = AppInspector.bundlePaths(containing: identity.path)
-            guard !parents.isEmpty else { continue }
-            let knownIDs: Set<String>
-            if let cached = bundleIDs[identity.path] { knownIDs = cached }
+            let info: (paths: Set<String>, ids: Set<String>)
+            if let cached = bundleInfo[identity.path] { info = cached }
             else {
-                knownIDs = Set(parents.compactMap { Bundle(path: $0)?.bundleIdentifier })
-                bundleIDs[identity.path] = knownIDs
+                // Paths and bundle metadata are stable across sweeps. Cache
+                // non-app executables too; walking URL parents for every live
+                // process twice a second otherwise dominates idle CPU usage.
+                let parents = Set(AppInspector.bundlePaths(containing: identity.path))
+                info = (parents, Set(parents.compactMap { Bundle(path: $0)?.bundleIdentifier }))
+                bundleInfo[identity.path] = info
             }
-            guard knownIDs.isDisjoint(with: AppInspector.protectedIDs),
-                  !ids.isDisjoint(with: knownIDs) || !paths.isDisjoint(with: parents) else { continue }
+            guard !info.paths.isEmpty, info.ids.isDisjoint(with: AppInspector.protectedIDs),
+                  !ids.isDisjoint(with: info.ids) || !paths.isDisjoint(with: info.paths) else { continue }
             active.insert(pid)
             if let previous = signaled[pid], previous.0 == identity {
                 if Date().timeIntervalSince(previous.1) > 1, Self.identity(pid) == identity { kill(pid, SIGKILL) }
@@ -107,6 +109,6 @@ final class AppEnforcer {
             }
         }
         signaled = signaled.filter { active.contains($0.key) }
-        if bundleIDs.count > 4_000 { bundleIDs.removeAll() }
+        if bundleInfo.count > 4_000 { bundleInfo.removeAll() }
     }
 }

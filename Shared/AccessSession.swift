@@ -1,5 +1,29 @@
 import Foundation
 
+/// Register the deadline without holding the persistence lock. Screen Time may
+/// synchronously start our monitor extension, which reads the same stored state.
+enum MonitoredSessionStart {
+    static func run(read: () throws -> AccessSession,
+                    arm: (Date) throws -> Void,
+                    commit: (AccessSession, AccessSession) throws -> Void,
+                    cancel: () -> Void,
+                    now: () -> Date = Date.init) throws {
+        let previous = try read()
+        var proposed = previous
+        try proposed.startRemaining(now: now())
+        guard let deadline = proposed.endsAt else { throw AccessSessionError.unavailable }
+        do {
+            try arm(deadline)
+            // A slow registration must never open an already expired session.
+            guard proposed.isActive(at: now()) else { throw AccessSessionError.unavailable }
+            try commit(previous, proposed)
+        } catch {
+            cancel()
+            throw error
+        }
+    }
+}
+
 enum AccessSessionError: LocalizedError {
     case unavailable
     var errorDescription: String? { "A session is already running, or there isn't enough daily time left for that duration." }

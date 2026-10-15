@@ -81,7 +81,64 @@ import Foundation
         legacy.end(now: now.addingTimeInterval(780))
         legacy.migratePausableAccounting(now: now.addingTimeInterval(800))
         precondition(legacy.budget.remaining == 1020, "Migration cannot replenish v2 usage")
+        // Reproduce Screen Time synchronously invoking a monitor callback during
+        // registration. That callback must be able to acquire the storage lock.
+        let storageLock = NSLock()
+        var stored = AccessSession()
+        stored.budget = DailyAllowance(now: now, timeZone: zone)
+        var cancelled = false
+        var testNow = now
+        let read = { () -> AccessSession in
+            storageLock.lock(); defer { storageLock.unlock() }
+            return stored
+        }
+        let commit = { (previous: AccessSession, proposed: AccessSession) throws in
+            storageLock.lock(); defer { storageLock.unlock() }
+            guard stored == previous else { throw AccessSessionError.unavailable }
+            stored = proposed
+        }
+        for _ in 0..<3 {
+            try MonitoredSessionStart.run(read: read, arm: { _ in
+                let callbackFinished = DispatchSemaphore(value: 0)
+                DispatchQueue.global().async {
+                    storageLock.lock()
+                    storageLock.unlock()
+                    callbackFinished.signal()
+                }
+                precondition(callbackFinished.wait(timeout: .now() + 1) == .success,
+                    "Monitor registration must not hold the callback's storage lock")
+                precondition(!read().isActive(at: testNow), "Restrictions stay applied until registration succeeds")
+            }, commit: commit, cancel: { cancelled = true }, now: { testNow })
+            precondition(stored.isActive(at: testNow))
+            stored.end(now: testNow.addingTimeInterval(10))
+            testNow.addTimeInterval(20)
+        }
+        precondition(stored.budget.remaining == 1770 && !cancelled,
+            "Repeated Start/Pause/Resume preserves the exact combined allowance")
+        let beforeFailure = stored
+        do {
+            try MonitoredSessionStart.run(read: read, arm: { _ in throw AccessSessionError.unavailable },
+                commit: commit, cancel: { cancelled = true }, now: { testNow })
+            fatalError("Failed registration unlocked access")
+        } catch {}
+        precondition(stored == beforeFailure && cancelled, "Failed registration neither unlocks nor spends time")
+        cancelled = false
+        do {
+            try MonitoredSessionStart.run(read: read, arm: { _ in stored.budget.charge(1, now: testNow) },
+                commit: commit, cancel: { cancelled = true }, now: { testNow })
+            fatalError("A stale reservation overwrote newer state")
+        } catch {}
+        precondition(!stored.isActive(at: testNow) && cancelled && stored.budget.remaining == 1769,
+            "Concurrent state changes cancel the newly armed monitor without overwriting usage")
+        cancelled = false
+        let beforeSlowRegistration = stored
+        do {
+            try MonitoredSessionStart.run(read: read, arm: { _ in testNow.addTimeInterval(1800) },
+                commit: commit, cancel: { cancelled = true }, now: { testNow })
+            fatalError("Slow registration opened expired access")
+        } catch {}
+        precondition(stored == beforeSlowRegistration && cancelled, "Expired registration leaves restrictions intact")
         try checkpoint.validate()
-        print("Daily allowance tests passed: aggregation, persistence, pause/resume, 13+17 minutes, exhaustion, rollback, day rollover and DST")
+        print("Daily allowance tests passed: aggregation, persistence, pause/resume, 13+17 minutes, exhaustion, rollback, day rollover, DST, monitor callback locking and registration failures")
     }
 }
