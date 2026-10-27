@@ -17,4 +17,4 @@ connections, or additional domains may bypass them. This is a personal
 commitment tool; a Mac administrator retains control of the system.
 
 Privacy: selections and timers stay on your Mac. No account, ads, or analytics.
-Support and source: https://github.com/FarzamHejaziK/OneWay
+Support and source: https://github.com/FarzamHejaziK/Just30

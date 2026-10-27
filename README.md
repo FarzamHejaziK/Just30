@@ -1,7 +1,7 @@
 <p align="center"><img src="OneWay/OneWay/Assets.xcassets/AppIcon.appiconset/AppIcon.png" width="96" alt="JustThirty logo"></p>
 <h1 align="center">JustThirty</h1>
 <p align="center"><strong>A little access. A clear stopping point.</strong><br>Native focus apps for iPhone and Mac. Free and open source.</p>
-<p align="center"><a href="https://github.com/FarzamHejaziK/OneWay/actions/workflows/ci.yml"><img src="https://github.com/FarzamHejaziK/OneWay/actions/workflows/ci.yml/badge.svg" alt="Build and test"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a></p>
+<p align="center"><a href="https://github.com/FarzamHejaziK/Just30/actions/workflows/ci.yml"><img src="https://github.com/FarzamHejaziK/Just30/actions/workflows/ci.yml/badge.svg" alt="Build and test"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a></p>
 
 Choose distracting apps and websites, then give all of them **one combined 30-minute daily allowance per device**. Start to unlock. Pause to block again and save the unused time. Resume later. Thirteen minutes used leaves seventeen minutes for the rest of the day.
 
@@ -13,7 +13,7 @@ JustThirty was originally named OneWay. The repository, internal bundle IDs, ser
 
 Version 1.3 is being prepared for public distribution. **The iPhone app is not published on the App Store.** Apple has accepted the signed universal Mac package for notarization; Gatekeeper and its stapled ticket pass verification. See the [release checklist](release/README.md), [validation report](release/QA.md), and [App Store materials](release/app-store/en-US/metadata.json). A successful build is not proof of Screen Time enforcement.
 
-**Mac release candidate:** [Download JustThirty 1.3 RC1](https://github.com/FarzamHejaziK/OneWay/releases/tag/mac-v1.3-rc.1). Free, signed, and notarized, with a SHA-256 checksum and installation instructions. Read the release notes before adding permanent blocks. Physical Intel and older macOS testing remain open.
+**Mac release candidate:** [Download JustThirty 1.3 RC1](https://github.com/FarzamHejaziK/Just30/releases/tag/mac-v1.3-rc.1). Free, signed, and notarized, with a SHA-256 checksum and installation instructions. Read the release notes before adding permanent blocks. Physical Intel and older macOS testing remain open.
 
 Visit [justthirty.vercel.app](https://justthirty.vercel.app) for the product overview, interactive preview, [support](https://justthirty.vercel.app/support/), and [privacy policy](https://justthirty.vercel.app/privacy/).
 
@@ -43,8 +43,8 @@ The lists and budgets do not sync. Allowances reset at midnight in the original 
 Clone the entire repository; both apps share the domain parser, allowance logic, and original icon.
 
 ```sh
-git clone https://github.com/FarzamHejaziK/OneWay.git
-cd OneWay
+git clone https://github.com/FarzamHejaziK/Just30.git
+cd Just30
 ./scripts/test.sh
 ```
 
@@ -95,6 +95,6 @@ The `website/` directory is a buildless, responsive Vercel site with an interact
 | `scripts/` | Regression checks, archive/export, universal Mac packaging |
 | `docs/` | Architecture, behavior, privacy, troubleshooting |
 
-See [architecture](docs/architecture.md), [daily access](docs/daily-access.md), and [troubleshooting](docs/troubleshooting.md). Bug fixes and accessibility improvements are welcome; follow [CONTRIBUTING.md](CONTRIBUTING.md). For help, [open an issue](https://github.com/FarzamHejaziK/OneWay/issues/new/choose). Public posts must not include credentials, device identifiers, or private block lists. Report vulnerabilities through [SECURITY.md](SECURITY.md).
+See [architecture](docs/architecture.md), [daily access](docs/daily-access.md), and [troubleshooting](docs/troubleshooting.md). Bug fixes and accessibility improvements are welcome; follow [CONTRIBUTING.md](CONTRIBUTING.md). For help, [open an issue](https://github.com/FarzamHejaziK/Just30/issues/new/choose). Public posts must not include credentials, device identifiers, or private block lists. Report vulnerabilities through [SECURITY.md](SECURITY.md).
 
 Made by [Farzam Hejazi](https://github.com/FarzamHejaziK). [MIT License](LICENSE).

@@ -10,6 +10,6 @@ The user grants individual Screen Time authorization on iPhone and administrator
 
 The marketing website has no application analytics, tracking, or persistent timer storage. Its hosting provider processes ordinary web requests such as IP address and browser information to serve and secure the site. External Apple and GitHub links are governed by those providers' policies.
 
-Support posts on GitHub may be public. Do not include private block lists, personal activity, contact information, credentials, or device identifiers. [Ask a general privacy question](https://github.com/FarzamHejaziK/OneWay/issues/new) without sharing that information.
+Support posts on GitHub may be public. Do not include private block lists, personal activity, contact information, credentials, or device identifiers. [Ask a general privacy question](https://github.com/FarzamHejaziK/Just30/issues/new) without sharing that information.
 
 The full website policy is maintained in `website/privacy/index.html`.

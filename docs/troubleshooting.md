@@ -48,4 +48,4 @@ There is no cross-device synchronization or migration UI. Changing an app's bund
 
 ## I found another issue
 
-Use the [bug report template](https://github.com/FarzamHejaziK/OneWay/issues/new?template=bug_report.yml), including OS/browser/Xcode versions and reproduction steps. Use [private reporting](../SECURITY.md) for security vulnerabilities. Redact private data.
+Use the [bug report template](https://github.com/FarzamHejaziK/Just30/issues/new?template=bug_report.yml), including OS/browser/Xcode versions and reproduction steps. Use [private reporting](../SECURITY.md) for security vulnerabilities. Redact private data.

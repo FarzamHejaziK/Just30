@@ -4,7 +4,7 @@ JustThirty is preparing its first public release. Security fixes target the curr
 
 ## Report a vulnerability privately
 
-Use GitHub's [private vulnerability reporting](https://github.com/FarzamHejaziK/OneWay/security/advisories/new). Include the affected commit, platform, reproduction steps, impact, and a minimal proof of concept that does not disclose private data. Do not post exploitable details in public issues before the maintainer has had a chance to investigate.
+Use GitHub's [private vulnerability reporting](https://github.com/FarzamHejaziK/Just30/security/advisories/new). Include the affected commit, platform, reproduction steps, impact, and a minimal proof of concept that does not disclose private data. Do not post exploitable details in public issues before the maintainer has had a chance to investigate.
 
 Never send Apple credentials, certificates/private keys, provisioning profiles, UDIDs, personal block lists, full hosts files, or unredacted diagnostic archives.
 

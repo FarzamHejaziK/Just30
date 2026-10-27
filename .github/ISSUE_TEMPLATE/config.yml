@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Usage questions
-    url: https://github.com/FarzamHejaziK/OneWay/discussions
+    url: https://github.com/FarzamHejaziK/Just30/discussions
     about: Ask about installation, signing, or expected behavior.
   - name: Private security report
-    url: https://github.com/FarzamHejaziK/OneWay/security/advisories/new
+    url: https://github.com/FarzamHejaziK/Just30/security/advisories/new
     about: Report security vulnerabilities without public disclosure.
