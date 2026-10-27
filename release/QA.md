@@ -28,3 +28,15 @@ The App Store record is a draft, not a public release. Five screenshots uploaded
 Family Controls distribution approval is pending for the app and monitor. The earlier export failed because their distribution profiles did not include the entitlement. A development-signed archive is not an App Store-exportable build. Complete device checks and distribution signing before uploading or submitting.
 
 Private logs, screenshots of real selections, device identifiers, signing materials, and App Review contact details remain outside source control.
+
+## Unreleased Mac build 8: preserve unrelated browsers
+
+Checked October 27, 2026. No installation, publication, daemon registration, live-browser interaction, system hosts changes, or system DNS flushing was performed for this fix. The public RC1 package remains build 7.
+
+The old helper armed `pendingBrowserClose` whenever timed access included a website. Pause or expiry then ran a three-second sweep over a hard-coded list of all major browsers, with SIGTERM followed by SIGKILL after one second. This selected entire browsers independently of the saved application list, including unrelated Chrome tabs, windows, and profiles.
+
+Build 8 removes that sweep and its Resume guard/arming paths. It clears the legacy marker on loading state without resetting current-format accounting or selections. Website rules still restore on Pause, expiry, or restart; only explicitly blocked apps are terminated. Browsers explicitly selected as blocked apps remain subject to normal app blocking. User-facing warnings and source documentation now describe this scope. App and helper build numbers both advance to 8 so a future installation can detect the older running service.
+
+The Mac test command now runs 41 existing checks and 32 helper regression checks. The new checks call the production service entry points with temporary hosts/state, a fake clock, and two disposable applications. They cover active access; mixed app/site expiry; website-only Pause, immediate Resume and expiry; additions during access; legacy pending state after restart; preservation of budget and saved selections; and explicitly selected browser-app enforcement. The application probe refuses all non-fixture targets before process signaling. A negative control that reintroduces automatic Chrome targeting is rejected by the new assertions without signaling any real browser. The full shared/domain/Mac test script passes. A local universal arm64/x86_64 app/helper build also passes strict signature verification using ad-hoc signing; it is a compilation check, not a distribution-signed or installed release.
+
+Limitation: restoring hosts rules and flushing DNS does not terminate existing connections or erase cached content. This fix deliberately avoids forcing browser shutdown, so a selected site already connected may remain usable until reconnecting or a user-initiated browser restart. The temporary-host tests verify the intended IPv4/IPv6 rules, not a live browser's network cutoff.

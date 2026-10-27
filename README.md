@@ -34,7 +34,7 @@ The apps have no account, analytics, advertising, cloud sync, or third-party run
 
 JustThirty is a personal commitment tool. iOS lets the owner revoke Screen Time authorization or delete the app. A Mac administrator retains system control. Website coverage varies by platform and browser; proxies, alternative DNS behavior, additional hostnames, cached content, and existing connections can bypass Mac host rules. Typed website restrictions on iPhone also disable Safari Private Browsing.
 
-**Save browser work before pausing or ending access on Mac.** Supported browsers close to clear connections, which can interrupt unsaved work. Adding a blocked app also closes it. The watcher checks about twice a second, so an app may appear briefly. There is no kernel-level launch prevention or Network Extension firewall.
+**Save work in blocked Mac apps before pausing or ending access.** Only explicitly saved apps close; a website rule does not close your browser. Adding a blocked app also closes it. Existing browser connections can persist until you manually quit and reopen the browser. The watcher checks about twice a second, so an app may appear briefly. There is no kernel-level launch prevention or Network Extension firewall. This browser-preservation fix is in unreleased Mac build 8; the public RC1 download still contains build 7 with automatic browser shutdown.
 
 The lists and budgets do not sync. Allowances reset at midnight in the original allowance time zone. Unused time does not carry over. Reinstallation, backup restoration, signing expiry, authorization changes, or loss of local data can affect enforcement.
 

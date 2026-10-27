@@ -10,8 +10,8 @@ All selected apps and websites share 30 minutes a day on this Mac.
 Start to unlock, pause to re-block and preserve unused time, resume later.
 The timer keeps running while the app is closed or the Mac is asleep.
 
-SAVE YOUR BROWSER WORK before pausing or ending access. Supported browsers
-close to clear existing connections, which may interrupt unsaved work.
+SAVE WORK IN BLOCKED APPS before pausing or ending access. Only explicitly
+saved apps close; browsers stay open unless you blocked the browser app itself.
 Host rules cover explicit domains. Proxies, alternate DNS behavior, existing
 connections, or additional domains may bypass them. This is a personal
 commitment tool; a Mac administrator retains control of the system.

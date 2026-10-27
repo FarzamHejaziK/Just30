@@ -34,6 +34,8 @@ struct AccessSession: Codable, Equatable {
     private(set) var accountingVersion: Int? = 2
     private(set) var endsAt: Date?
     private(set) var startedAt: Date?
+    // Legacy Mac field retained for decoding older state and reader compatibility.
+    // The Mac helper clears and ignores it; website rules do not close browsers.
     var pendingBrowserClose = false
 
     mutating func migratePausableAccounting(now: Date = Date()) {

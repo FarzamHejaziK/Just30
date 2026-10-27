@@ -4,7 +4,9 @@
 
 All saved apps and websites share **30 minutes of timed access per day on each device**. Start the timer to unlock; pause to block again and keep your remaining time for later. For example, 13 minutes used leaves 17 minutes. Time keeps running while you are away unless you pause. The lists remain add-only.
 
-See [daily access behavior, setup, and limitations](../docs/daily-access.md). On Mac, supported browsers and blocked apps close when access ends; save your work first.
+See [daily access behavior, setup, and limitations](../docs/daily-access.md). On Mac, only apps explicitly saved in the block list close when access ends; save work in those apps first. Website rules resume without closing unrelated browsers, tabs, windows, or profiles. Existing connections may persist until you quit and reopen the browser yourself.
+
+The browser-preservation fix is in the unreleased build 8 source. The published Mac RC1 package contains build 7 and still has the earlier automatic browser-closing behavior. Building this source does not update an installed background service.
 
 
 [Project overview](../README.md) · [Troubleshooting](../docs/troubleshooting.md)

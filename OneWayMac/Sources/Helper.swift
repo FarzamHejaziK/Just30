@@ -4,37 +4,45 @@ import OSLog
 final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate {
     private let queue = DispatchQueue(label: "OneWay.enforcement")
     private let logger = Logger(subsystem: OneWayConfig.serviceID, category: "service")
-    private let stateURL = OneWayConfig.stateDirectory.appendingPathComponent("block-list.json")
-    private let hosts = HostsEnforcer(hostsURL: URL(fileURLWithPath: "/private/etc/hosts"),
-        backupURL: OneWayConfig.stateDirectory.appendingPathComponent("hosts-before-oneway"), flushDNS: true)
-    private let apps = AppEnforcer()
-    private let sessionURL = OneWayConfig.stateDirectory.appendingPathComponent("daily-access.json")
+    private let stateURL: URL
+    private let hosts: HostsEnforcer
+    private let enforceApplications: ([BlockedApplication]) -> Void
+    private let sessionURL: URL
+    private let now: () -> Date
     private var session = AccessSession()
     private var sessionLoaded = false
-    private var browserCloseUntil: Date?
-    private let browserEnforcer = AppEnforcer()
-    // These browser processes must exit so existing connections do not survive re-blocking.
-    private let browsers = ["com.apple.Safari", "com.google.Chrome", "com.google.Chrome.beta",
-        "com.google.Chrome.canary", "org.chromium.Chromium", "org.mozilla.firefox", "org.mozilla.nightly",
-        "com.microsoft.edgemac", "com.brave.Browser", "com.operasoftware.Opera", "com.vivaldi.Vivaldi",
-        "company.thebrowser.Browser", "com.duckduckgo.macos.browser", "app.zen-browser.zen"]
-        .map { BlockedApplication(bundleID: $0, name: $0, path: "/__oneway_browser_id_only__/" + $0 + ".app") }
     private var list = MacBlockList()
     private var loaded = false
     private var issue: String?
     private var timer: DispatchSourceTimer?
     private var tick = 0
 
-    override init() {
+    override convenience init() {
+        let directory = OneWayConfig.stateDirectory
+        let hosts = HostsEnforcer(hostsURL: URL(fileURLWithPath: "/private/etc/hosts"),
+            backupURL: directory.appendingPathComponent("hosts-before-oneway"), flushDNS: true)
+        let apps = AppEnforcer()
+        self.init(stateDirectory: directory, hosts: hosts, enforceApplications: apps.enforce,
+            now: Date.init, requireSystemOwner: true, scheduleTimer: true)
+    }
+
+    private init(stateDirectory: URL, hosts: HostsEnforcer,
+                 enforceApplications: @escaping ([BlockedApplication]) -> Void,
+                 now: @escaping () -> Date, requireSystemOwner: Bool, scheduleTimer: Bool) {
+        stateURL = stateDirectory.appendingPathComponent("block-list.json")
+        sessionURL = stateDirectory.appendingPathComponent("daily-access.json")
+        self.hosts = hosts
+        self.enforceApplications = enforceApplications
+        self.now = now
         super.init()
         queue.sync {
             do {
-                let directory = OneWayConfig.stateDirectory
+                let directory = stateDirectory
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
                     attributes: [.posixPermissions: 0o700])
                 let attributes = try FileManager.default.attributesOfItem(atPath: directory.path)
                 guard attributes[.type] as? FileAttributeType == .typeDirectory,
-                      (attributes[.ownerAccountID] as? NSNumber)?.uint32Value == 0 else {
+                      !requireSystemOwner || (attributes[.ownerAccountID] as? NSNumber)?.uint32Value == 0 else {
                     throw MacFailure.message("OneWay's service data directory must be owned by the system administrator.")
                 }
                 try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
@@ -45,14 +53,18 @@ final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate
                         session = try JSONDecoder().decode(AccessSession.self, from: Data(contentsOf: sessionURL))
                         try session.validate()
                     }
-                    session.migratePausableAccounting()
-                    session.budget.advance(to: Date())
+                    session.migratePausableAccounting(now: now())
+                    session.budget.advance(to: now())
+                    // Retire the old browser-shutdown marker without changing
+                    // saved selections, remaining time, or an active deadline.
+                    session.pendingBrowserClose = false
                     try saveSession(session)
                     sessionLoaded = true
                 } catch { issue = "Daily access is unavailable: " + error.localizedDescription }
                 applyHosts()
             } catch { issue = error.localizedDescription }
         }
+        guard scheduleTimer else { return }
         let timer = DispatchSource.makeTimerSource(queue: queue)
         timer.schedule(deadline: .now(), repeating: .milliseconds(500), leeway: .milliseconds(100))
         timer.setEventHandler { [weak self] in
@@ -65,7 +77,20 @@ final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate
         timer.resume()
     }
 
-    private var accessActive: Bool { sessionLoaded && session.isActive() }
+    #if ONEWAY_HELPER_TESTING
+    // The production initializer always uses root-owned storage, DNS flushing,
+    // and the real clock. Tests supply only temporary files and fixture targets.
+    convenience init(testStateDirectory: URL, hosts: HostsEnforcer,
+                     enforceApplications: @escaping ([BlockedApplication]) -> Void,
+                     now: @escaping () -> Date) {
+        self.init(stateDirectory: testStateDirectory, hosts: hosts,
+            enforceApplications: enforceApplications, now: now,
+            requireSystemOwner: false, scheduleTimer: false)
+    }
+    func tickForTesting() { queue.sync { enforceSession() } }
+    #endif
+
+    private var accessActive: Bool { sessionLoaded && session.isActive(at: now()) }
     private func saveSession(_ next: AccessSession) throws {
         try next.validate()
         try AtomicFile.write(JSONEncoder().encode(next), to: sessionURL, attributes: [.posixPermissions: 0o600])
@@ -73,24 +98,17 @@ final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate
     }
     private func enforceSession() {
         if !accessActive {
-            if sessionLoaded && (session.endsAt != nil || session.budget.calendar.startOfDay(for: Date()) > session.budget.dayStart) {
+            if sessionLoaded && (session.endsAt != nil || session.budget.calendar.startOfDay(for: now()) > session.budget.dayStart) {
                 var next = session
-                next.end()
-                next.budget.advance(to: Date())
+                next.end(now: now())
+                next.budget.advance(to: now())
                 do { try saveSession(next) } catch { sessionLoaded = false; issue = error.localizedDescription }
                 applyHosts()
             }
-            apps.enforce(list.applications)
-            if session.pendingBrowserClose {
-                // Keep the pending flag across helper restarts until the sweep is complete.
-                if browserCloseUntil == nil { browserCloseUntil = Date().addingTimeInterval(3) }
-                browserEnforcer.enforce(browsers)
-                if Date() >= browserCloseUntil! {
-                    var next = session; next.pendingBrowserClose = false
-                    do { try saveSession(next); browserCloseUntil = nil }
-                    catch { issue = error.localizedDescription }
-                }
-            }
+            // A website rule never selects a browser application for termination.
+            // Existing connections may outlive restored hosts rules; preserve
+            // unrelated tabs, windows, and profiles rather than killing them.
+            enforceApplications(list.applications)
         }
     }
     private func applyHosts() {
@@ -116,15 +134,15 @@ final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate
     func resumeSession(reply: @escaping (Data?, String?) -> Void) {
         queue.async {
             do {
-                guard self.loaded && self.sessionLoaded && self.issue == nil && !self.list.isEmpty,
-                      self.browserCloseUntil == nil else { throw MacFailure.message("Blocking must be healthy before starting access.") }
+                guard self.loaded && self.sessionLoaded && self.issue == nil && !self.list.isEmpty else {
+                    throw MacFailure.message("Blocking must be healthy before starting access.")
+                }
                 var next = self.session
-                try next.startRemaining()
-                next.pendingBrowserClose = !self.list.domains.isEmpty
+                try next.startRemaining(now: self.now())
                 try self.saveSession(next)
                 self.applyHosts()
                 if let issue = self.issue {
-                    var closed = self.session; closed.end(); try self.saveSession(closed)
+                    var closed = self.session; closed.end(now: self.now()); try self.saveSession(closed)
                     self.enforceSession()
                     throw MacFailure.message(issue)
                 }
@@ -136,7 +154,7 @@ final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate
         queue.async {
             do {
                 guard self.sessionLoaded else { throw MacFailure.message("Daily access state could not be read.") }
-                var next = self.session; next.end()
+                var next = self.session; next.end(now: self.now())
                 try self.saveSession(next)
                 self.applyHosts()
                 self.enforceSession()
@@ -171,11 +189,6 @@ final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate
         // Commit before enforcement. A failed save never replaces the in-memory list.
         try StateFile.save(next, to: stateURL)
         list = next
-        if accessActive && !list.domains.isEmpty && !session.pendingBrowserClose {
-            var updated = session; updated.pendingBrowserClose = true
-            do { try saveSession(updated) }
-            catch { sessionLoaded = false; issue = error.localizedDescription }
-        }
         applyHosts()
         enforceSession()
     }
@@ -189,6 +202,7 @@ final class BlockService: NSObject, OneWayServiceProtocol, NSXPCListenerDelegate
     }
 }
 
+#if !ONEWAY_HELPER_TESTING
 @main
 enum HelperMain {
     static func main() {
@@ -204,3 +218,4 @@ enum HelperMain {
         withExtendedLifetime((service, listener)) { RunLoop.main.run() }
     }
 }
+#endif

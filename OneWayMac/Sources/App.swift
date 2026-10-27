@@ -62,7 +62,7 @@ struct MainView: View {
                     blockList
                     HStack(alignment: .top, spacing: 9) {
                         Image(systemName: "info.circle")
-                        Text("Website rules cover the exact domains you add, including the shown aliases. Other subdomains, proxies, and some browser DNS settings can bypass them. Outside timed access, blocked apps close shortly after opening. When access ends, supported browsers close to clear existing connections. Save your work first. A Mac administrator can disable the service.")
+                        Text("Website rules cover the exact domains you add, including the shown aliases. Other subdomains, proxies, and some browser DNS settings can bypass them. Outside timed access, only apps saved in your block list close. Browsers stay open unless you blocked the browser app itself. Existing website connections may continue until you quit and reopen the browser. A Mac administrator can disable the service.")
                             .fixedSize(horizontal: false, vertical: true)
                     }.font(.system(size: 11)).foregroundStyle(.secondary).lineSpacing(3)
                 }.padding(32).frame(maxWidth: 1000, alignment: .leading)
@@ -79,7 +79,7 @@ struct MainView: View {
         .confirmationDialog("Start access?", isPresented: $confirmAccess, titleVisibility: .visible) {
             Button("Start timer and unlock") { Task { await model.resumeAccess() } }
         } message: {
-            Text("Save browser and app work first. All blocked apps and websites unlock together. The timer runs until you tap Pause access, even while you are away. Pausing or reaching zero closes blocked apps and supported browsers, which can lose unsaved work. Pausing preserves unused time for later today.")
+            Text("Save work in your blocked apps first. All blocked apps and websites unlock together. The timer runs until you tap Pause access, even while you are away. Pausing or reaching zero closes only your saved blocked apps and restores website rules. Existing website connections may continue until you quit and reopen the browser. Pausing preserves unused time for later today.")
         }
         .task { await model.refresh() }
         .onReceive(timer) { _ in if phase == .active { Task { await model.refresh() } } }
@@ -92,7 +92,7 @@ struct MainView: View {
             if let session = model.session {
                 if session.isActive(), let end = session.endsAt {
                     Text(end, style: .timer).font(.system(size: 30, weight: .bold, design: .rounded)).monospacedDigit()
-                    Text("Timer running. Pause to save unused time. Blocked apps and supported browsers close on pause or when time runs out.")
+                    Text("Timer running. Pause to save unused time. On pause or expiry, only saved blocked apps close and website rules resume. Existing website connections may continue.")
                         .font(.system(size: 12)).foregroundStyle(.secondary)
                     Button("Pause access") { Task { await model.endSession() } }.disabled(model.busy)
                 } else {
