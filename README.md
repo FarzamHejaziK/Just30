@@ -7,7 +7,7 @@ Choose distracting apps and websites, then give all of them **one combined 30-mi
 
 Your list is add-only: new entries are merged with saved entries, and there is no in-app remove or reset button. Review additions carefully. The timer continues while you switch away, lock the device, or close the app; pause explicitly to preserve time.
 
-JustThirty was originally named OneWay. The repository, internal bundle IDs, service names, and data locations retain that name to preserve existing installations. The original logo is unchanged.
+JustThirty was originally named OneWay. The repository is now named Just30. Internal bundle IDs, service names, and data locations retain the historical name to preserve existing installations. The original logo is unchanged.
 
 ## Release status
 
